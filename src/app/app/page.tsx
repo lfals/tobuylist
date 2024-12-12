@@ -5,7 +5,6 @@ import {
 	CardDescription,
 	CardHeader,
 } from "@/components/ui/card";
-import getListsCards from "@/services/getListsCards";
 import { getListDashboard } from "@/services/lists";
 import Link from "next/link";
 
