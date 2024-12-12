@@ -5,7 +5,6 @@ import Link from "next/link";
 import { SidebarMenuButton } from "./ui/sidebar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { MoreVerticalIcon } from "lucide-react";
-import { List } from "@/types";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -17,11 +16,11 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useState } from "react"
-import { deleteList } from "@/services/lists/deleteList";
+import { deleteList, changeListVisibility, getAll } from "@/services/lists";
 import { buttonVariants } from "./ui/button";
-import { changeListVisibility } from "@/services/lists/changeListVisibility";
 import { cn } from "@/lib/utils";
-export function SidebarItem({ item }: { item: List }) {
+
+export function SidebarItem({ item }: { item: Awaited<ReturnType<typeof getAll>>[number] }) {
     const [isOpen, setIsOpen] = useState(false)
 
     return (

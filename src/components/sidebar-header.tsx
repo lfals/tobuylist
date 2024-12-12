@@ -13,7 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { useAuth } from "@clerk/nextjs";
-import { createList } from "@/services/lists/createList";
+import { createList } from "@/services/lists";
 import { redirect } from "next/navigation";
 
 const formSchema = z.object({

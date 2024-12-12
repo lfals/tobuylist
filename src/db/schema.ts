@@ -15,7 +15,7 @@ export const listsTable = sqliteTable("lists", {
 
 export const listItemsTable = sqliteTable("listItems", {
     id: int().primaryKey({ autoIncrement: true }),
-    listId: int().notNull(),
+    listId: int().notNull().references(() => listsTable.id),
 
     name: text().notNull(),
     store: text(),
@@ -26,6 +26,8 @@ export const listItemsTable = sqliteTable("listItems", {
     createdAt: int().notNull().default(sql`CURRENT_TIMESTAMP`),
     updatedAt: int().notNull().default(sql`CURRENT_TIMESTAMP`),
     isActive: int().notNull().default(1),
+
+
 });
 
 export const listInsertSchema = createInsertSchema(listsTable);

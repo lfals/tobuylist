@@ -2,11 +2,11 @@
 import React from "react";
 import { SidebarItem } from "./sidebar-item";
 import { SidebarMenuItem } from "./ui/sidebar";
-import getLists from "@/services/lists/getLists";
+import { getAll } from "@/services/lists";
 
 export async function SidebarBody() {
 
-    const lists = await getLists();
+    const lists = await getAll();
 
     return (
         <>
