@@ -12,7 +12,7 @@ export default async function Dashboard() {
 	const listsCards = await getListDashboard()
 	return (
 		<div className="flex flex-col gap-8 h-[calc(100vh-160px)]">
-			<div className="flex items-center gap-4">
+			{/* <div className="flex items-center gap-4">
 				<div className="w-32">
 					<h1>Total</h1>
 					<p className="text-2xl font-bold">R$1200</p>
@@ -21,9 +21,9 @@ export default async function Dashboard() {
 					<h1>Listas</h1>
 					<p className="text-2xl font-bold">12</p>
 				</div>
-			</div>
+			</div> */}
 			<div className="grid grid-cols-5 grid-auto-rows-[200px] gap-4 w-full overflow-y-auto scrollbar-hide pb-4">
-				{listsCards.map((listCard) => (
+				{listsCards ? listsCards.map((listCard) => (
 					<Link href={`/app/${listCard.id}`} key={listCard.id}>
 						<Card className="w-full h-48 flex flex-col justify-between">
 							<CardHeader>
@@ -43,7 +43,7 @@ export default async function Dashboard() {
 								</div>
 							</CardContent> */}
 						</Card></Link>
-				))}
+				)) : <p>Sem listas</p>}
 			</div>
 		</div>
 	);

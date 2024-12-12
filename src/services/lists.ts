@@ -8,12 +8,12 @@ import { revalidatePath } from "next/cache";
 
 export async function createList(list: typeof listsTable.$inferInsert) {
     const newList = await db.insert(listsTable).values(list).returning()
-    revalidatePath('/app')
     return newList[0]
 }
 
 export async function deleteList(listId: number) {
     await db.delete(listsTable).where(eq(listsTable.id, listId))
+    await db.delete(listItemsTable).where(eq(listItemsTable.listId, listId))
     revalidatePath('/app')
 }
 

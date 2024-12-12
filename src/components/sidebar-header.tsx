@@ -49,6 +49,7 @@ export function SidebarHeaderItem() {
         })
 
         setIsOpen(false)
+
         redirect(`/app/${newList.id}`)
     }
 
