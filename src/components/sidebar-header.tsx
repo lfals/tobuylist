@@ -20,9 +20,7 @@ const formSchema = z.object({
     name: z.string().min(2).max(50).refine((value) => value.trim() !== "", {
         message: "O nome não pode ser apenas espaços em branco",
     }),
-    description: z.string().min(2).max(50).refine((value) => value.trim() !== "", {
-        message: "A descrição não pode ser apenas espaços em branco",
-    }),
+    description: z.string().max(50).optional(),
 })
 
 export function SidebarHeaderItem() {

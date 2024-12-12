@@ -1,14 +1,16 @@
+"use server"
+import db from "@/db/drizzle";
+import { listsTable } from "@/db/schema";
 import { List } from "@/types";
+import { currentUser } from "@clerk/nextjs/server";
 import { faker } from '@faker-js/faker'
+import { and, eq } from "drizzle-orm";
 
 
-const getLists = async (): Promise<List[]> => {
-
-    const data = Array.from({ length: faker.number.int({ min: 10, max: 200 }) }).map((_, index) => ({
-        title: faker.lorem.word(),
-        id: faker.string.uuid(),
-    }));
-
+const getLists = async (id: number): Promise<List[]> => {
+    const user = await currentUser()
+    const list = await db.select().from(listsTable).where(and(eq(listsTable.userId, user?.id!), eq(listsTable.id, id)))
+    console.log(list)
     try {
         const response = await new Promise<List[]>((resolve) => {
             setTimeout(() => {

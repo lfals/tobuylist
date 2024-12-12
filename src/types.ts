@@ -23,3 +23,29 @@ export type ListItem = {
 	store: string;
 	link: string;
 }
+
+export type ListDetails = {
+	id: number;
+	name: string;
+	createdAt: number;
+	updatedAt: number;
+	isActive: number;
+	listId: number;
+	store: string | null;
+	link: string | null;
+	price: number;
+	quantity: number;
+	items: {
+		name: string;
+		link: string | null;
+		id: number;
+		createdAt: number;
+		updatedAt: number;
+		isActive: number;
+		price: number;
+		quantity: number;
+		listId: number;
+		store: string | null;
+	}[];
+
+}
