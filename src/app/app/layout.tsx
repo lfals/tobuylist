@@ -1,12 +1,16 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { UserSwitcher } from "@/components/user-switcher";
+import { Suspense } from "react";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
 	children,
 }: {
 	children: React.ReactNode;
 }) {
+
+
+
 	return (
 		<>
 			<SidebarProvider>

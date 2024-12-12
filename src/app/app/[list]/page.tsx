@@ -1,12 +1,55 @@
-
+"use client";
 import { Accordion, } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { useFormatNumber } from "@/hooks/use-formatNumber";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { MinusIcon, MoreHorizontalIcon, PlusIcon } from "lucide-react";
-import React from "react";
+import React, { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+
+const formSchema = z.object({
+    name: z.string().min(2, {
+        message: "Nome deve ter pelo menos 2 caracteres.",
+    }),
+    link: z.string().url({
+        message: "Link deve ser uma URL válida.",
+    }),
+    price: z.string().transform((val) => {
+        // Convert string price to number, removing currency formatting
+        return val.replace(/[^\d.,]/g, '').replace(',', '.')
+    }),
+    quantity: z.number().min(1, {
+        message: "Quantidade deve ser maior que 0.",
+    }),
+})
 
 export default function ListPage() {
+    const [isOpen, setIsOpen] = React.useState(false);
+
+    const form = useForm<z.infer<typeof formSchema>>({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            name: "",
+            link: "",
+            price: "R$ 0,00",
+            quantity: 1,
+        },
+    })
+
+    function onSubmit(values: z.infer<typeof formSchema>) {
+
+        console.log(values)
+    }
+
+    useEffect(() => {
+        form.reset();
+    }, [isOpen])
+
     return (
         <>
             <div className="flex flex-col gap-10">
@@ -16,7 +59,7 @@ export default function ListPage() {
                         <h2 className="text-4xl font-bold">Nome Lista</h2>
                     </div>
                     <div>
-                        <Button>Adicionar</Button>
+                        <Button onClick={() => setIsOpen(true)}>Adicionar</Button>
                     </div>
 
                 </div>
@@ -68,6 +111,85 @@ export default function ListPage() {
                     </Accordion>
                 </div>
             </div>
+
+            <Dialog open={isOpen} onOpenChange={setIsOpen}>
+
+                <DialogContent className="sm:max-w-[425px]" >
+                    <DialogHeader>
+                        <DialogTitle>Novo item</DialogTitle>
+                        <DialogDescription>
+                            Crie um novo item para a lista.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                            <FormField
+                                control={form.control}
+                                name="name"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Item</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="shadcn" {...field} />
+                                        </FormControl>
+
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="link"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>URL</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="shadcn" {...field} />
+                                        </FormControl>
+
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <div className="flex gap-2">
+                                <FormField
+                                    control={form.control}
+                                    name="price"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Preço</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="shadcn"
+                                                    {...field}
+                                                    onChange={(e) => {
+                                                        field.onChange(useFormatNumber(e.target.value));
+                                                    }}
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="quantity"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Quantidade</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" min={1} {...field} />
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+
+                            </div>
+                            <DialogFooter>
+                                <Button type="submit">Adicionar</Button>
+                            </DialogFooter>
+                        </form>
+                    </Form>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }

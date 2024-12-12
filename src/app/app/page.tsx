@@ -5,10 +5,13 @@ import {
 	CardDescription,
 	CardHeader,
 } from "@/components/ui/card";
+import getListsCards from "@/services/lists/getListsCards";
+import Link from "next/link";
 
-export default function Dashboard() {
+export default async function Dashboard() {
+	const listsCards = await getListsCards();
 	return (
-		<div className="flex flex-col gap-8">
+		<div className="flex flex-col gap-8 h-[calc(100vh-160px)]">
 			<div className="flex items-center gap-4">
 				<div className="w-32">
 					<h1>Total</h1>
@@ -19,26 +22,27 @@ export default function Dashboard() {
 					<p className="text-2xl font-bold">12</p>
 				</div>
 			</div>
-			<div className="grid grid-cols-5 gap-4 w-full">
-				{Array.from({ length: 10 }).map((_, index) => (
-					<Card key={index} className="w-full">
-						<CardHeader>
-							<CardTitle>Card Title</CardTitle>
-							<CardDescription>Card Description</CardDescription>
+			<div className="grid grid-cols-5 grid-auto-rows-[200px] gap-4 w-full overflow-y-auto scrollbar-hide pb-4">
+				{listsCards.map((listCard) => (
+					<Link href={`/app/${listCard.id}`} key={listCard.id}>
+						<Card className="w-full flex flex-col justify-between">
+							<CardHeader>
+							<CardTitle>{listCard.title}</CardTitle>
+							<CardDescription className="line-clamp-3">{listCard.description}</CardDescription>
 						</CardHeader>
-						<CardContent>
+						<CardContent >
 							<div className="flex items-center justify-between gap-2">
 								<div>
 									<h1>Itens</h1>
-									<p>12</p>
+									<p>{listCard.totalItems}</p>
 								</div>
 								<div>
 									<h1>Total</h1>
-									<p>R$1200</p>
+									<p>{(listCard.totalValue / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
 								</div>
 							</div>
 						</CardContent>
-					</Card>
+					</Card></Link>
 				))}
 			</div>
 		</div>

@@ -14,7 +14,7 @@ export function UserSwitcher() {
 	return (
 		<SidebarMenu>
 			<SidebarMenuItem>
-				<div className="grid grid-cols-2 gap-2 p-2">
+				<div className="grid grid-cols-2 grid-rows-[40px] gap-2 p-2">
 					{pathname !== "/app" && (
 						<Link href={"/app"} className="flex items-center gap-2 col-start-1">
 							<ArrowLeftIcon size={16} />
