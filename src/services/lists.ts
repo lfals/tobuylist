@@ -3,7 +3,7 @@
 import db from "@/db/drizzle";
 import { listItemsTable, listsTable } from "@/db/schema";
 import { currentUser } from "@clerk/nextjs/server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 export async function createList(list: typeof listsTable.$inferInsert) {
@@ -30,7 +30,9 @@ export async function getAll() {
 }
 
 export const getListDetails = async (listId: number) => {
-    const list = await db.select().from(listsTable).where(eq(listsTable.id, listId))
+    const user = await currentUser()
+
+    const list = await db.select().from(listsTable).where(and(eq(listsTable.id, listId), eq(listsTable.userId, user?.id!)))
     const listItems = await db.select().from(listItemsTable).where(eq(listItemsTable.listId, listId))
     const totalValue = listItems.reduce((acc, item) => acc + item.price * item.quantity, 0)
     return { ...list[0], items: listItems, totalValue }
