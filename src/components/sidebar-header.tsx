@@ -15,6 +15,8 @@ import { Input } from "./ui/input";
 import { useAuth } from "@clerk/nextjs";
 import { createList } from "@/services/lists";
 import { redirect } from "next/navigation";
+import { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from "./ui/drawer";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const formSchema = z.object({
     name: z.string().min(2).max(50).refine((value) => value.trim() !== "", {
@@ -26,6 +28,7 @@ const formSchema = z.object({
 export function SidebarHeaderItem() {
     const { userId } = useAuth()
     const [isOpen, setIsOpen] = useState(false);
+    const isMobile = useIsMobile()
 
     function openAddListModal() {
         setIsOpen(true);
@@ -71,52 +74,105 @@ export function SidebarHeaderItem() {
                 </Button>
             </div>
 
-            <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="sm:max-w-[425px]" >
-                    <Form  {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8" id="add-list-form">
-                            <DialogHeader>
-                                <DialogTitle>Nova lista</DialogTitle>
-                                <DialogDescription>
-                                    Crie uma nova lista de compras.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <FormField
-                                control={form.control}
-                                name="name"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Nome</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="Moto" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="description"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Descrição</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="Peças e acessórios" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+            {isMobile ? (<>
+                <Drawer open={isOpen} onOpenChange={setIsOpen}>
+                    <DrawerContent className="sm:max-w-[425px]" >
+                        <Form  {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 p-4" id="add-list-form">
+                                <DrawerHeader>
+                                    <DrawerTitle>Nova lista</DrawerTitle>
+                                    <DrawerDescription>
+                                        Crie uma nova lista de compras.
+                                    </DrawerDescription>
+                                </DrawerHeader>
+                                <FormField
+                                    control={form.control}
+                                    name="name"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Nome</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Moto" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="description"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Descrição</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Peças e acessórios" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
 
 
-                            <DialogFooter>
-                                <Button type="submit" form="add-list-form">Criar</Button>
-                            </DialogFooter>
+                                <DrawerFooter>
+                                    <Button type="submit" form="add-list-form">Criar</Button>
+                                </DrawerFooter>
 
-                        </form>
-                    </Form>
-                </DialogContent>
-            </Dialog>
+                            </form>
+                        </Form>
+                    </DrawerContent>
+                </Drawer>
+            </>) : (<>
+
+                <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                    <DialogContent className="sm:max-w-[425px]" >
+                        <Form  {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8" id="add-list-form">
+                                <DialogHeader>
+                                    <DialogTitle>Nova lista</DialogTitle>
+                                    <DialogDescription>
+                                        Crie uma nova lista de compras.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <FormField
+                                    control={form.control}
+                                    name="name"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Nome</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Moto" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="description"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Descrição</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Peças e acessórios" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+
+                                <DialogFooter>
+                                    <Button type="submit" form="add-list-form">Criar</Button>
+                                </DialogFooter>
+
+                            </form>
+                        </Form>
+                    </DialogContent>
+                </Dialog>
+            </>)}
+
+
+
         </>
     )
 }
