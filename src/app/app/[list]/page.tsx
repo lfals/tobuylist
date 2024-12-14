@@ -18,6 +18,7 @@ import Image from "next/image";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { revalidatePath } from "next/cache";
 
 const formSchema = z.object({
     name: z.string().min(2, {
@@ -90,7 +91,7 @@ export default function ListPage() {
     }
 
     async function getData() {
-        const list = await getListDetails(Number(params.list))
+        const list = await getListDetails(params.list as string)
         setData(list)
     }
 
@@ -113,6 +114,7 @@ export default function ListPage() {
                     <div>
                         <h1 className="text-2xl font-bold">{useFormatNumber(data?.totalValue.toString() ?? "0")}</h1>
                         <h2 className="text-4xl font-bold">{data?.name}</h2>
+                        <p className="text-sm text-gray-500">{data?.description}</p>
                     </div>
                     <div>
                         <Button onClick={() => setIsOpen(true)}>Adicionar</Button>

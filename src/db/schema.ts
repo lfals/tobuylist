@@ -4,7 +4,7 @@ import { createInsertSchema } from 'drizzle-zod';
 import { z } from "zod";
 
 export const listsTable = sqliteTable("lists", {
-    id: int().primaryKey({ autoIncrement: true }),
+    id: text().primaryKey(),
     name: text().notNull(),
     description: text(),
     createdAt: int().notNull().default(sql`CURRENT_TIMESTAMP`),

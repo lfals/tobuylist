@@ -48,7 +48,6 @@ export function SidebarHeaderItem() {
         const newList = await createList({
             name: values.name,
             description: values.description,
-            userId: userId!
         })
 
         setIsOpen(false)
