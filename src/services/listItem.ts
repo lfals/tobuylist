@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
-export const createListItem = async (listId: number, data: z.infer<typeof listItemInsertSchema>) => {
+export const createListItem = async (listId: string, data: z.infer<typeof listItemInsertSchema>) => {
 
 
     if (data.link && !data.store) {
@@ -26,7 +26,7 @@ export const deleteListItem = async (item: any) => {
 }
 
 
-export const editListItem = async (listId: number, data: z.infer<typeof listItemInsertSchema>) => {
+export const editListItem = async (listId: string, data: z.infer<typeof listItemInsertSchema>) => {
 
 
     if (data.link && !data.store) {

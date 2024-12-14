@@ -15,7 +15,7 @@ export const listsTable = sqliteTable("lists", {
 
 export const listItemsTable = sqliteTable("listItems", {
     id: int().primaryKey({ autoIncrement: true }),
-    listId: int().notNull(),
+    listId: text().notNull(),
 
     name: text().notNull(),
     store: text(),

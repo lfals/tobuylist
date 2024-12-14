@@ -58,17 +58,17 @@ export default function ListPage() {
 
     function onSubmit(values: z.infer<typeof formSchema>) {
         if (isEditing) {
-            editListItem(Number(params.list), {
+            editListItem(params.list as string, {
                 ...values,
                 id: editingItem.id,
                 quantity: Number(values.quantity),
-                listId: Number(params.list)
+                listId: params.list as string
             })
         } else {
-            createListItem(Number(params.list), {
+            createListItem(params.list as string, {
                 ...values,
                 quantity: Number(values.quantity),
-                listId: Number(params.list)
+                listId: params.list as string
             })
         }
         setIsOpen(false)
