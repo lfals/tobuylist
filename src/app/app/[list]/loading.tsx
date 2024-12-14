@@ -20,7 +20,7 @@ export default function Loading() {
                     <Accordion type="single" collapsible className="flex flex-col gap-2">
                         {Array.from({ length: 10 }).map((_, index) => (
                             <React.Fragment key={index}>
-                                <Skeleton className=" bg-white flex w-full gap-4 p-4 rounded-md h-24" />
+                                <Skeleton className=" bg-white flex w-full gap-4 p-4 rounded-md h-28" />
                             </React.Fragment>
                         ))}
                     </Accordion>

@@ -8,7 +8,7 @@ import { useFormatNumber } from "@/hooks/use-formatNumber";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { MoreHorizontalIcon } from "lucide-react";
 import { useParams } from "next/navigation";
-import React, { useEffect } from "react";
+import React, { Suspense, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -16,6 +16,7 @@ import { getListDetails } from "@/services/lists";
 import { createListItem, deleteListItem, editListItem } from "@/services/listItem";
 import Image from "next/image";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import Loading from "./loading";
 
 const formSchema = z.object({
     name: z.string().min(2, {
@@ -120,22 +121,22 @@ export default function ListPage() {
                     <div className="flex flex-col gap-2 ">
                         {data?.items.map((item) => (
                             <React.Fragment key={item.id}>
-                                <div className=" bg-white grid grid-cols-[1fr_auto_auto]  w-full gap-4 p-4 rounded-md h-24">
-                                    <div className="flex flex-col gap-0 self-center">
-                                        <div className="flex items-center gap-2">
-                                            <h1 className="text-xl truncate">{item.name} </h1>
+
+                                <div className="grid grid-cols-10 bg-white p-4 rounded-md ">
+                                    <div className="flex flex-col gap-2 col-span-8">
+                                        <div className="flex flex-col">
+                                            <h1 className="font-bold truncate" >{item.name}</h1>
+                                            <a href={item.link ?? "#"} target="_blank" className="flex items-center gap-2">
+                                                <p>{item.store ?? <>&nbsp;</>}</p>
+                                                {item.link && <Image src={`https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${item.link}&size=16#refinements`} alt={item.name} width={16} height={16} />}
+                                            </a>
+
                                         </div>
-                                        <a href={item.link ?? "#"} target="_blank" className="flex items-center gap-2">
-                                            <p>{item.store ?? <>&nbsp;</>}</p>
-                                            {item.link && <Image src={`https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${item.link}&size=16#refinements`} alt={item.name} width={16} height={16} />}
-                                        </a>
-                                    </div>
-                                    <div className="flex items-center gap-2">
                                         <h1>{useFormatNumber(item.price.toString())} (x{item.quantity})</h1>
                                     </div>
                                     <DropdownMenu modal={false}>
                                         <DropdownMenuTrigger asChild>
-                                            <Button size={"icon"} variant={"ghost"}>
+                                            <Button className="col-start-10 col-end-10 place-self-end self-start" size={"icon"} variant={"ghost"}>
                                                 <MoreHorizontalIcon size={16} />
                                             </Button>
                                         </DropdownMenuTrigger>
@@ -147,12 +148,11 @@ export default function ListPage() {
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </div>
-
                             </React.Fragment>
                         ))}
                     </div>
                 </div>
-            </div>
+            </div >
 
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
 

@@ -2,12 +2,12 @@
 
 
 import { Button } from "./ui/button";
-import { PlusIcon } from "lucide-react";
+import { HomeIcon, PlusIcon } from "lucide-react";
 import { useEffect, useState } from "react";
-
+import Link from 'next/link'
 
 import { z } from "zod"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
@@ -61,7 +61,11 @@ export function SidebarHeaderItem() {
     return (
         <>
             <div className="flex px-2 items-center justify-between gap-2 w-full">
-                <h1 className="text-lg font-semibold">Listas</h1>
+                <Link href={"/app"} className="flex gap-2 items-center">
+                    <HomeIcon size={16} />
+                    <h1 className="text-lg font-semibold">Listas</h1>
+                </Link>
+
                 <Button size={"icon"} variant={"ghost"} onClick={openAddListModal}>
                     <PlusIcon size={16} />
                 </Button>

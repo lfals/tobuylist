@@ -22,7 +22,7 @@ export default async function Dashboard() {
 					<p className="text-2xl font-bold">12</p>
 				</div>
 			</div> */}
-			<div className="grid grid-cols-5 grid-auto-rows-[200px] gap-4 w-full overflow-y-auto scrollbar-hide pb-4">
+			<div className=" grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 grid-auto-rows-[200px] gap-4 w-full overflow-y-auto scrollbar-hide pb-4">
 				{listsCards ? listsCards.map((listCard) => (
 					<Link href={`/app/${listCard.id}`} key={listCard.id}>
 						<Card className="w-full h-48 flex flex-col justify-between">
