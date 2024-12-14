@@ -5,19 +5,23 @@ import { listItemsTable, listsTable } from "@/db/schema";
 import { currentUser } from "@clerk/nextjs/server";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { randomUUID } from 'node:crypto'
 
-export async function createList(list: typeof listsTable.$inferInsert) {
-    const newList = await db.insert(listsTable).values(list).returning()
+export async function createList(list: Omit<typeof listsTable.$inferInsert, 'id' | 'userId'>) {
+    const user = await currentUser()
+    const uuid = randomUUID()
+    const newList = await db.insert(listsTable).values({ ...list, userId: user?.id!, id: uuid }).returning()
+    revalidatePath('/app')
     return newList[0]
 }
 
-export async function deleteList(listId: number) {
+export async function deleteList(listId: string) {
     await db.delete(listsTable).where(eq(listsTable.id, listId))
     await db.delete(listItemsTable).where(eq(listItemsTable.listId, listId))
     revalidatePath('/app')
 }
 
-export async function changeListVisibility(listId: number, isActive: 0 | 1) {
+export async function changeListVisibility(listId: string, isActive: 0 | 1) {
     await db.update(listsTable).set({ isActive }).where(eq(listsTable.id, listId))
     revalidatePath('/app')
     return
@@ -29,7 +33,7 @@ export async function getAll() {
     return lists;
 }
 
-export const getListDetails = async (listId: number) => {
+export const getListDetails = async (listId: string) => {
     const user = await currentUser()
 
     const list = await db.select().from(listsTable).where(and(eq(listsTable.id, listId), eq(listsTable.userId, user?.id!)))
