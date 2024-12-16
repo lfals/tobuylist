@@ -28,8 +28,6 @@ export const deleteListItem = async (item: any) => {
 
 export const editListItem = async (listId: string, data: z.infer<typeof listItemInsertSchema>) => {
 
-    console.log(data)
-
     if (data.link && !data.store) {
         data.store = new URL(data.link).hostname.replace("www.", "").split(".")[0]
     }

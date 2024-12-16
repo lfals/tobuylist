@@ -63,7 +63,6 @@ export async function getListDashboard() {
     }
 
 
-    console.log(newList)
 
     return newList
 }

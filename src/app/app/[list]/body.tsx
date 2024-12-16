@@ -40,7 +40,6 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
     })
 
     function onSubmit(values: z.infer<typeof formSchema>) {
-        console.log(values)
         editListItem(params.list as string, {
             ...values,
             id: editingItem.id,
