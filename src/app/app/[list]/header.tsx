@@ -35,9 +35,9 @@ export default function Header({ data }: { data?: Awaited<ReturnType<typeof getL
         },
     })
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
+    async function onSubmit(values: z.infer<typeof formSchema>) {
 
-        createListItem(params.list as string, {
+        await createListItem(params.list as string, {
             ...values,
             quantity: Number(values.quantity),
             listId: params.list as string
