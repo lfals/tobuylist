@@ -14,28 +14,13 @@ import { createListItem } from "@/services/listItem";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useParams } from "next/navigation";
+import { formSchema } from "./formSchema";
 
-const formSchema = z.object({
-    name: z.string().min(2, {
-        message: "Nome deve ter pelo menos 2 caracteres.",
-    }),
-    link: z.union([z.literal(""), z.string().trim().url()]),
-    store: z.string(),
-    price: z.string().transform((val) => {
-        return String(val).replace(/[^\d.,]/g, '').replace(',', '').replace('.', '')
-    }),
-    quantity: z.string().refine((val) => {
-        return Number(val) > 0
-    }, {
-        message: "Quantidade deve ser maior que 0.",
-    })
-})
 
 export default function Header({ data }: { data?: Awaited<ReturnType<typeof getListDetails>> }) {
     const [isOpen, setIsOpen] = React.useState(false);
     const params = useParams()
     const isMobile = useIsMobile()
-
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -57,9 +42,6 @@ export default function Header({ data }: { data?: Awaited<ReturnType<typeof getL
         })
         setIsOpen(false)
     }
-
-
-
 
     useEffect(() => {
         if (!isOpen) {
