@@ -19,6 +19,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { formSchema } from "./formSchema";
+import { useFormatViewNumber } from "@/hooks/formatViewNumber";
 
 export default function Body({ item }: { item: Awaited<ReturnType<typeof getListDetails>>["items"][number] }) {
     const [isOpen, setIsOpen] = React.useState(false);
@@ -39,10 +40,11 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
     })
 
     function onSubmit(values: z.infer<typeof formSchema>) {
+        console.log(values)
         editListItem(params.list as string, {
             ...values,
             id: editingItem.id,
-            quantity: Number(values.quantity),
+            quantity: Number(values.quantity.replace("R$ ", "").replace(",", "").replace(".", "")),
             listId: params.list as string
         })
 
@@ -85,7 +87,7 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
                         </a>
 
                     </div>
-                    <h1>{useFormatNumber(item.price.toString())} (x{item.quantity})</h1>
+                    <h1>{useFormatViewNumber(item.price.toString())} (x{item.quantity})</h1>
                 </div>
                 <DropdownMenu modal={false}>
                     <DropdownMenuTrigger asChild>

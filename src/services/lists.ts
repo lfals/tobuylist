@@ -3,7 +3,7 @@
 import db from "@/db/drizzle";
 import { listItemsTable, listsTable } from "@/db/schema";
 import { currentUser } from "@clerk/nextjs/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sum } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from 'node:crypto'
 
@@ -46,7 +46,24 @@ export const getListDetails = async (listId: string) => {
 export async function getListDashboard() {
     const user = await currentUser()
     const lists = await db.select().from(listsTable).where(eq(listsTable.userId, user?.id!))
+    const newList = {
+        lists: [] as { list: typeof listsTable.$inferSelect, totalValue: number, items: number }[],
+        totalValue: 0,
+        items: 0
+    }
+    for (const list of lists) {
+        const listItems = await db.select({
+            value: listItemsTable.price,
+            quantity: listItemsTable.quantity
+        }).from(listItemsTable).where(eq(listItemsTable.listId, list.id))
+        const totalValue = listItems.reduce((acc, item) => acc + item.value * item.quantity, 0)
+        newList.lists.push({ list, totalValue, items: listItems.length })
+        newList.totalValue += totalValue
+        newList.items += listItems.length
+    }
 
 
-    return lists
+    console.log(newList)
+
+    return newList
 }

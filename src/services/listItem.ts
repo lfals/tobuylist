@@ -28,12 +28,13 @@ export const deleteListItem = async (item: any) => {
 
 export const editListItem = async (listId: string, data: z.infer<typeof listItemInsertSchema>) => {
 
+    console.log(data)
 
     if (data.link && !data.store) {
         data.store = new URL(data.link).hostname.replace("www.", "").split(".")[0]
     }
 
-    const listItem = await db.update(listItemsTable).set({ ...data, price: Number(data.price) }).where(eq(listItemsTable.id, data.id!)).returning()
+    const listItem = await db.update(listItemsTable).set({ ...data, price: Number(data.price.replace("R$ ", "").replace(",", "").replace(".", "")) }).where(eq(listItemsTable.id, data.id!)).returning()
 
     revalidatePath(`/app/${listId}`)
     return listItem
