@@ -1,22 +1,16 @@
-"use client";
-
-
-import { Button } from "./ui/button";
-import { HomeIcon, PlusIcon } from "lucide-react";
+"use client"
+import { Button } from "@/components/ui/button";
+import { MoreVerticalIcon } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { useEffect, useState } from "react";
-import Link from 'next/link'
-
-import { z } from "zod"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
-import { Input } from "./ui/input";
-import { useAuth } from "@clerk/nextjs";
-import { createList } from "@/services/lists";
-import { redirect } from "next/navigation";
-import { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from "./ui/drawer";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { z } from "zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { createList, editList } from "@/services/lists";
 
 const formSchema = z.object({
     name: z.string().min(2).max(50).refine((value) => value.trim() !== "", {
@@ -25,12 +19,14 @@ const formSchema = z.object({
     description: z.string().max(50).optional(),
 })
 
-export function SidebarHeaderItem() {
-    const [isOpen, setIsOpen] = useState(false);
+export default function EditList({ item }: { item: any }) {
     const isMobile = useIsMobile()
+    const [isOpen, setIsOpen] = useState(false)
 
-    function openAddListModal() {
+    function openEditListModal() {
         setIsOpen(true);
+        form.setValue("name", item.name)
+        form.setValue("description", item.description)
     }
 
     const form = useForm<z.infer<typeof formSchema>>({
@@ -44,44 +40,30 @@ export function SidebarHeaderItem() {
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
 
-        const newList = await createList({
+        await editList({
             name: values.name,
             description: values.description,
-        })
+        }, item.id)
 
         setIsOpen(false)
-
-        redirect(`/app/${newList.id}`)
     }
 
     useEffect(() => {
-        form.reset()
+        if (!isOpen) {
+            form.reset()
+        }
     }, [isOpen])
-
 
     return (
         <>
-            <div className="flex px-2 items-center justify-between gap-2 w-full">
-                <Link href={"/app"} className="flex gap-2 items-center">
-                    <HomeIcon size={16} />
-                    <h1 className="text-lg font-semibold">Listas</h1>
-                </Link>
-
-                <Button size={"icon"} variant={"ghost"} onClick={openAddListModal}>
-                    <PlusIcon size={16} />
-                </Button>
-            </div>
-
+            <Button size={"icon"} variant={"ghost"} onClick={openEditListModal}><MoreVerticalIcon size={16} /></Button>
             {isMobile ? (<>
                 <Drawer open={isOpen} onOpenChange={setIsOpen}>
                     <DrawerContent className="sm:max-w-[425px]" >
                         <Form  {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 p-4" id="add-list-form">
                                 <DrawerHeader>
-                                    <DrawerTitle>Nova lista</DrawerTitle>
-                                    <DrawerDescription>
-                                        Crie uma nova lista de compras.
-                                    </DrawerDescription>
+                                    <DrawerTitle>Editar lista</DrawerTitle>
                                 </DrawerHeader>
                                 <FormField
                                     control={form.control}
@@ -112,7 +94,7 @@ export function SidebarHeaderItem() {
 
 
                                 <DrawerFooter>
-                                    <Button type="submit" form="add-list-form">Criar</Button>
+                                    <Button type="submit" form="add-list-form">Salvar</Button>
                                 </DrawerFooter>
 
                             </form>
@@ -126,10 +108,7 @@ export function SidebarHeaderItem() {
                         <Form  {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8" id="add-list-form">
                                 <DialogHeader>
-                                    <DialogTitle>Nova lista</DialogTitle>
-                                    <DialogDescription>
-                                        Crie uma nova lista de compras.
-                                    </DialogDescription>
+                                    <DialogTitle>Editar lista</DialogTitle>
                                 </DialogHeader>
                                 <FormField
                                     control={form.control}
@@ -160,7 +139,7 @@ export function SidebarHeaderItem() {
 
 
                                 <DialogFooter>
-                                    <Button type="submit" form="add-list-form">Criar</Button>
+                                    <Button type="submit" form="add-list-form">Salvar</Button>
                                 </DialogFooter>
 
                             </form>
@@ -168,9 +147,6 @@ export function SidebarHeaderItem() {
                     </DialogContent>
                 </Dialog>
             </>)}
-
-
-
         </>
     )
 }

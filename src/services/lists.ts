@@ -7,6 +7,14 @@ import { and, eq, sum } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from 'node:crypto'
 
+export async function editList(list: Omit<typeof listsTable.$inferInsert, 'id' | 'userId'>, listId: string) {
+    const user = await currentUser()
+    await db.update(listsTable).set({ ...list }).where(and(eq(listsTable.id, listId), eq(listsTable.userId, user?.id!)))
+    revalidatePath(`/app/${listId}`)
+    revalidatePath(`/app`)
+    return
+}
+
 export async function createList(list: Omit<typeof listsTable.$inferInsert, 'id' | 'userId'>) {
     const user = await currentUser()
     const uuid = randomUUID()

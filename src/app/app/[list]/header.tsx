@@ -15,6 +15,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useParams } from "next/navigation";
 import { formSchema } from "./formSchema";
+import { MoreVerticalIcon } from "lucide-react";
+import EditList from "./editList";
 
 
 export default function Header({ data }: { data?: Awaited<ReturnType<typeof getListDetails>> }) {
@@ -58,8 +60,9 @@ export default function Header({ data }: { data?: Awaited<ReturnType<typeof getL
                     <h2 className="text-4xl font-bold">{data?.name}</h2>
                     <p className="text-sm text-gray-500">{data?.description}</p>
                 </div>
-                <div>
+                <div className="flex items-center gap-2">
                     <Button onClick={() => setIsOpen(true)}>Adicionar</Button>
+                    <EditList item={data} />
                 </div>
 
             </div>
