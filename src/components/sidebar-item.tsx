@@ -25,14 +25,14 @@ export function SidebarItem({ item }: { item: Awaited<ReturnType<typeof getAll>>
 
     return (
         <>
-            <SidebarMenuButton asChild>
+            <SidebarMenuButton className="p-0" asChild>
                 <div className="flex justify-between items-center">
-                    <Link href={`/app/${item.id}`} className={cn("font-medium", item.isActive ? "text-foreground" : "text-muted-foreground line-through")}>
+                    <Link href={`/app/${item.id}`} className={cn("font-medium w-full h-full flex px-4 items-center justify-start", item.isActive ? "text-foreground" : "text-muted-foreground line-through")}>
                         {item.name}
                     </Link>
-                    <div className="flex items-center gap-2">
-                        <DropdownMenu modal={false}>
-                            <DropdownMenuTrigger>
+                    <div className="flex items-center gap-2 ">
+                        <DropdownMenu modal={false} >
+                            <DropdownMenuTrigger className="p-2">
                                 <MoreVerticalIcon size={16} />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
