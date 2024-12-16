@@ -6,7 +6,6 @@ import {
 	CardHeader,
 } from "@/components/ui/card";
 import { useFormatViewNumber } from "@/hooks/formatViewNumber";
-import { useFormatNumber } from "@/hooks/use-formatNumber";
 import { getListDashboard } from "@/services/lists";
 import Link from "next/link";
 

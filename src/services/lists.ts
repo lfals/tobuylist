@@ -53,7 +53,7 @@ export const getListDetails = async (listId: string) => {
 
 export async function getListDashboard() {
     const user = await currentUser()
-    const lists = await db.select().from(listsTable).where(eq(listsTable.userId, user?.id!))
+    const lists = await db.select().from(listsTable).where(and(eq(listsTable.userId, user?.id!), eq(listsTable.isActive, 1)))
     const newList = {
         lists: [] as { list: typeof listsTable.$inferSelect, totalValue: number, items: number }[],
         totalValue: 0,
