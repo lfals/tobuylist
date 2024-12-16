@@ -94,8 +94,8 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                        <DropdownMenuItem>Marcar</DropdownMenuItem>
-                        <DropdownMenuSeparator />
+                        {/* <DropdownMenuItem>Marcar</DropdownMenuItem> */}
+                        {/* <DropdownMenuSeparator /> */}
                         <DropdownMenuItem onClick={() => handleEditItem(item)}>Editar</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleDeleteItem(item)}>Excluir</DropdownMenuItem>
                     </DropdownMenuContent>
