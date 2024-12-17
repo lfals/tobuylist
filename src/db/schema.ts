@@ -11,11 +11,13 @@ export const listsTable = sqliteTable("lists", {
     updatedAt: int().notNull().default(sql`CURRENT_TIMESTAMP`),
     isActive: int().notNull().default(1),
     userId: text().notNull(),
+    public: int().notNull().default(0),
+    shared: int().notNull().default(0),
 });
 
 export const listItemsTable = sqliteTable("listItems", {
     id: int().primaryKey({ autoIncrement: true }),
-    listId: text().notNull(),
+    listId: text().notNull().references(() => listsTable.id, { onDelete: 'cascade' }),
 
     name: text().notNull(),
     store: text(),
@@ -28,6 +30,15 @@ export const listItemsTable = sqliteTable("listItems", {
     isActive: int().notNull().default(1),
     order: int().notNull().default(0),
 });
+
+
+export const sharedListsTable = sqliteTable("sharedLists", {
+    id: text().primaryKey(),
+    listId: text().notNull(),
+    userId: text().notNull(),
+})
+
+
 
 export const listInsertSchema = createInsertSchema(listsTable);
 

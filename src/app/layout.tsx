@@ -38,8 +38,8 @@ export default function RootLayout({
 					{children}
 				</body>
 			</html>
-			<Analytics />
-			<SpeedInsights />
+			{/* <Analytics />
+			<SpeedInsights /> */}
 		</ClerkProvider>
 	);
 }

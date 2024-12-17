@@ -1,35 +1,33 @@
-"use client";
-import { Button, buttonVariants } from "@/components/ui/button";
+"use client"
+import React, { useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { useFormatNumber } from "@/hooks/use-formatNumber";
+import { getListDetails } from "@/services/lists";
+
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useFormatNumber } from "@/hooks/use-formatNumber";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { GripIcon, MoreHorizontalIcon } from "lucide-react";
-import { useParams } from "next/navigation";
-import React, { useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-
-import { getListDetails } from "@/services/lists";
-import { deleteListItem, editListItem, markListItem } from "@/services/listItem";
-import Image from "next/image";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { z } from "zod";
+import { createListItem } from "@/services/listItem";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { useParams, useSearchParams } from "next/navigation";
 import { formSchema } from "./formSchema";
-import { useFormatViewNumber } from "@/hooks/formatViewNumber";
-import { cn } from "@/lib/utils";
-import { Reorder, useDragControls } from "framer-motion"
+import EditList from "./editList";
+import { ShareList } from "./shareList";
+import { SaveList } from "./saveList";
 
-export default function Body({ item }: { item: Awaited<ReturnType<typeof getListDetails>>["items"][number] }) {
+
+export default function Header({ data }: { data?: Awaited<ReturnType<typeof getListDetails>> }) {
     const [isOpen, setIsOpen] = React.useState(false);
-    const [editingItem, setEditingItem] = React.useState<any>(null)
-    const [isDeleting, setIsDeleting] = React.useState(false)
     const params = useParams()
+    const searchParams = useSearchParams()
+    const isShared = searchParams.get('share')
     const isMobile = useIsMobile()
-    const controls = useDragControls()
+
+
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -42,39 +40,18 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
         },
     })
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
-        editListItem(params.list as string, {
+    async function onSubmit(values: z.infer<typeof formSchema>) {
+
+        await createListItem(params.list as string, {
             ...values,
-            id: editingItem.id,
-            quantity: Number(values.quantity.replace("R$ ", "").replace(",", "").replace(".", "")),
+            quantity: Number(values.quantity),
             listId: params.list as string
         })
-
         setIsOpen(false)
-    }
-
-    function handleDeleteItem(item: any) {
-        setIsDeleting(true)
-        setEditingItem(item)
-    }
-
-    function handleEditItem(item: any) {
-        setIsOpen(true)
-        setEditingItem(item)
-        form.setValue("name", item.name)
-        form.setValue("link", item.link)
-        form.setValue("store", item.store)
-        form.setValue("price", useFormatNumber(item.price.toString()))
-        form.setValue("quantity", item.quantity.toString())
-    }
-
-    async function handleMarkItem(item: any) {
-        await markListItem(params.list as string, item.id, item.isActive ? 0 : 1)
     }
 
     useEffect(() => {
         if (!isOpen) {
-            setEditingItem(null)
             form.reset()
         }
     }, [isOpen])
@@ -82,49 +59,30 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
 
     return (
         <>
-            <Reorder.Item
-                value={item}
-                dragListener={false}
-                dragControls={controls}
-                className={cn("grid grid-cols-[min-content_1fr_min-content] gap-4 bg-white", item.isActive ? " p-4 rounded-md" : "opacity-50 p-4 rounded-md",)}
-            >
-                <div
-                    onPointerDown={(e) => controls.start(e)}
-                    className="flex items-center justify-center grid-col-start-1 grid-col-end-1 hover:cursor-grab"
-                >
-                    <GripIcon size={16} />
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold">{useFormatNumber(data?.totalValue.toString() ?? "0")}</h1>
+                    <h2 className="text-4xl font-bold">{data?.name}</h2>
+                    <p className="text-sm text-gray-500">{data?.description}</p>
                 </div>
-                <div className="flex flex-col gap-2 col-span-8 select-none">
-                    <div className="flex flex-col">
-                        <h1 className="font-bold truncate" >{item.name}</h1>
-                        <a href={item.link ?? "#"} target="_blank" className="flex items-center gap-2">
-                            {item.link && <Image src={`https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${item.link}&size=24#refinements`} alt={item.name} width={16} height={16} />}
-                            <p>{item.store ?? <>&nbsp;</>}</p>
-                        </a>
-
-                    </div>
-                    <h1>{useFormatViewNumber(item.price.toString())} (x{item.quantity})</h1>
+                <div className="flex items-center gap-2">
+                    {Boolean(isShared) !== true ? (
+                        <>
+                            <ShareList item={data} />
+                            <Button onClick={() => setIsOpen(true)}>Adicionar</Button>
+                            <EditList item={data} />
+                        </>
+                    ) : (
+                        <SaveList />
+                    )}
                 </div>
-                <DropdownMenu modal={false}>
-                    <DropdownMenuTrigger asChild>
-                        <Button className="col-start-10 col-end-10 place-self-end self-start" size={"icon"} variant={"ghost"}>
-                            <MoreHorizontalIcon size={16} />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => handleMarkItem(item)}>{item.isActive ? "Desabilitar" : "Habilitar"}</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleEditItem(item)}>Editar</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDeleteItem(item)}>Excluir</DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </Reorder.Item>
-
+            </div>
             {isMobile ? (
                 <>
                     <Drawer open={isOpen} onOpenChange={setIsOpen} >
                         <DrawerContent>
                             <DrawerHeader>
-                                <DrawerTitle>Editar item</DrawerTitle>
+                                <DrawerTitle>{"Novo item"}</DrawerTitle>
                             </DrawerHeader>
                             <Form {...form}>
                                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4" id="create-item-form">
@@ -207,7 +165,7 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
                                         />
                                     </div>
                                     <DrawerFooter>
-                                        <Button type="submit" form="create-item-form">Salvar</Button>
+                                        <Button type="submit" form="create-item-form">Adicionar</Button>
                                     </DrawerFooter>
                                 </form>
                             </Form>
@@ -221,7 +179,7 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
 
                         <DialogContent className="sm:max-w-[425px]" >
                             <DialogHeader>
-                                <DialogTitle>Editar item</DialogTitle>
+                                <DialogTitle>Novo item</DialogTitle>
                             </DialogHeader>
                             <Form {...form}>
                                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" id="create-item-form">
@@ -305,7 +263,7 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
 
                                     </div>
                                     <DialogFooter>
-                                        <Button type="submit" form="create-item-form">Salvar</Button>
+                                        <Button type="submit" form="create-item-form">Adicionar</Button>
                                     </DialogFooter>
                                 </form>
                             </Form>
@@ -314,25 +272,6 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
                 </>
             )
             }
-
-
-
-            <AlertDialog open={isDeleting} onOpenChange={setIsDeleting}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Excluir item</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Esta ação não pode ser desfeita. Isso excluirá permanentemente o item de sua lista.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction className={buttonVariants({ variant: "destructive" })} onClick={() => deleteListItem(editingItem)}>Excluir</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-
-
         </>
     )
 }

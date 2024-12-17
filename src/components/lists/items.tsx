@@ -10,6 +10,7 @@ export default function Items({ data }: { data: Awaited<ReturnType<typeof getLis
     const [items, setItems] = useState(data?.items)
     const [debouncedItems, setDebouncedItems] = useState(items)
 
+
     useEffect(() => {
         const timeoutId = setTimeout(async () => {
             if (JSON.stringify(items) !== JSON.stringify(debouncedItems)) {
