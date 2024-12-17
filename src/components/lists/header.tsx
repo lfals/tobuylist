@@ -57,6 +57,7 @@ export default function Header({ data }: { data?: Awaited<ReturnType<typeof getL
     }, [isOpen])
 
 
+
     return (
         <>
             <div className="flex items-center justify-between">
@@ -73,7 +74,7 @@ export default function Header({ data }: { data?: Awaited<ReturnType<typeof getL
                             <EditList item={data} />
                         </>
                     ) : (
-                        <SaveList />
+                        <SaveList isPublic={Boolean(data?.public)} />
                     )}
                 </div>
             </div>

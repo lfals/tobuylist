@@ -1,7 +1,7 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { Toaster } from "@/components/ui/sonner";
 import { UserSwitcher } from "@/components/user-switcher";
-import { Suspense } from "react";
 
 export default async function DashboardLayout({
 	children,
@@ -19,6 +19,7 @@ export default async function DashboardLayout({
 					<UserSwitcher />
 					<div className="p-2 md:p-10">{children}</div>
 				</div>
+				<Toaster />
 			</SidebarProvider>
 		</>
 	);

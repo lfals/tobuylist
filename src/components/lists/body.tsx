@@ -23,6 +23,9 @@ import { useFormatViewNumber } from "@/hooks/formatViewNumber";
 import { cn } from "@/lib/utils";
 import { Reorder, useDragControls } from "framer-motion"
 
+
+
+
 export default function Body({ item }: { item: Awaited<ReturnType<typeof getListDetails>>["items"][number] }) {
     const [isOpen, setIsOpen] = React.useState(false);
     const [editingItem, setEditingItem] = React.useState<any>(null)
@@ -83,6 +86,8 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
     }, [isOpen])
 
 
+
+
     return (
         <>
             <Reorder.Item
@@ -92,12 +97,14 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
                 dragControls={Boolean(isShared) ? undefined : controls}
                 className={cn("grid grid-cols-[min-content_1fr_min-content] gap-4 bg-white", item.isActive ? " p-4 rounded-md" : "opacity-50 p-4 rounded-md",)}
             >
-                <div
-                    onPointerDown={(e) => controls.start(e)}
-                    className={cn("flex items-center justify-center grid-col-start-1 grid-col-end-1 hover:cursor-grab", isShared ? "hidden" : "")}
-                >
-                    <GripIcon size={16} />
-                </div>
+                {!Boolean(isShared) && (
+                    <div
+                        onPointerDown={(e) => controls.start(e)}
+                        className={cn("flex items-center justify-center grid-col-start-1 grid-col-end-1 hover:cursor-grab", isShared ? "hidden" : "")}
+                    >
+                        <GripIcon size={16} />
+                    </div>
+                )}
                 <div className="flex flex-col gap-2 col-span-8 select-none">
                     <div className="flex flex-col">
                         <h1 className="font-bold truncate" >{item.name}</h1>
@@ -109,18 +116,20 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
                     </div>
                     <h1>{useFormatViewNumber(item.price.toString())} (x{item.quantity})</h1>
                 </div>
-                <DropdownMenu modal={false}>
-                    <DropdownMenuTrigger asChild>
-                        <Button className="col-start-10 col-end-10 place-self-end self-start" size={"icon"} variant={"ghost"}>
-                            <MoreHorizontalIcon size={16} />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => handleMarkItem(item)}>{item.isActive ? "Desabilitar" : "Habilitar"}</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleEditItem(item)}>Editar</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDeleteItem(item)}>Excluir</DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                {!Boolean(isShared) && (
+                    <DropdownMenu modal={false}>
+                        <DropdownMenuTrigger asChild>
+                            <Button className="col-start-10 col-end-10 place-self-end self-start" size={"icon"} variant={"ghost"}>
+                                <MoreHorizontalIcon size={16} />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => handleMarkItem(item)}>{item.isActive ? "Desabilitar" : "Habilitar"}</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditItem(item)}>Editar</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDeleteItem(item)}>Excluir</DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
             </Reorder.Item>
 
             {isMobile ? (
@@ -320,7 +329,6 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
             }
 
 
-
             <AlertDialog open={isDeleting} onOpenChange={setIsDeleting}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
@@ -335,7 +343,6 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-
 
         </>
     )
