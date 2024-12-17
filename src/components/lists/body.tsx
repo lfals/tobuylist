@@ -23,7 +23,7 @@ import { useFormatViewNumber } from "@/hooks/formatViewNumber";
 import { cn } from "@/lib/utils";
 import { Reorder, useDragControls } from "framer-motion"
 
-export default function Body({ item, isPublic }: { item: Awaited<ReturnType<typeof getListDetails>>["items"][number], isPublic: boolean }) {
+export default function Body({ item }: { item: Awaited<ReturnType<typeof getListDetails>>["items"][number] }) {
     const [isOpen, setIsOpen] = React.useState(false);
     const [editingItem, setEditingItem] = React.useState<any>(null)
     const [isDeleting, setIsDeleting] = React.useState(false)

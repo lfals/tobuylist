@@ -2,8 +2,9 @@ import Items from "@/components/lists/shared/items"
 import SharedHeader from "@/components/lists/shared/shared-header"
 import { getSharedListDetails } from "@/services/lists"
 
-export default async function SharedListPage({ params }: { params: { list: string } }) {
-    const data = await getSharedListDetails(params.list)
+export default async function SharedListPage({ params }: { params: Promise<{ list: string }> }) {
+    const param = await params
+    const data = await getSharedListDetails(param.list)
     return (
         <>
             {data ? (
