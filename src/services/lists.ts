@@ -46,7 +46,10 @@ export const getListDetails = async (listId: string) => {
     const user = await currentUser()
 
     const list = await db.select().from(listsTable).where(and(eq(listsTable.id, listId), eq(listsTable.userId, user?.id!)))
-    const listItems = await db.select().from(listItemsTable).where(eq(listItemsTable.listId, listId)).orderBy(asc(listItemsTable.order))
+    if (!list.length) {
+        redirect('/app')
+    }
+    const listItems = await db.select().from(listItemsTable).where(eq(listItemsTable.listId, list[0].id)).orderBy(asc(listItemsTable.order))
     const listItemsTotal = await db.select().from(listItemsTable).where(and(eq(listItemsTable.listId, listId), eq(listItemsTable.isActive, 1)))
     const totalValue = listItemsTotal.reduce((acc, item) => acc + item.price * item.quantity, 0)
     return { ...list[0], items: listItems, totalValue }
