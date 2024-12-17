@@ -42,3 +42,12 @@ export const markListItem = async (listId: string, itemId: number, isActive: num
     await db.update(listItemsTable).set({ isActive }).where(eq(listItemsTable.id, itemId))
     revalidatePath(`/app/${listId}`)
 }
+
+export const reorderListItem = async (items: any[]) => {
+
+    await db.transaction(async (tx) => {
+        for (const item of items) {
+            await tx.update(listItemsTable).set({ order: item.order }).where(eq(listItemsTable.id, item.id))
+        }
+    })
+}

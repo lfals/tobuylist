@@ -3,7 +3,7 @@
 import db from "@/db/drizzle";
 import { listItemsTable, listsTable } from "@/db/schema";
 import { currentUser } from "@clerk/nextjs/server";
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { randomUUID } from 'node:crypto'
@@ -46,7 +46,7 @@ export const getListDetails = async (listId: string) => {
     const user = await currentUser()
 
     const list = await db.select().from(listsTable).where(and(eq(listsTable.id, listId), eq(listsTable.userId, user?.id!)))
-    const listItems = await db.select().from(listItemsTable).where(eq(listItemsTable.listId, listId))
+    const listItems = await db.select().from(listItemsTable).where(eq(listItemsTable.listId, listId)).orderBy(asc(listItemsTable.order))
     const listItemsTotal = await db.select().from(listItemsTable).where(and(eq(listItemsTable.listId, listId), eq(listItemsTable.isActive, 1)))
     const totalValue = listItemsTotal.reduce((acc, item) => acc + item.price * item.quantity, 0)
     return { ...list[0], items: listItems, totalValue }

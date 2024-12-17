@@ -6,7 +6,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useFormatNumber } from "@/hooks/use-formatNumber";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { MoreHorizontalIcon } from "lucide-react";
+import { GripIcon, MoreHorizontalIcon } from "lucide-react";
 import { useParams } from "next/navigation";
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
@@ -21,6 +21,7 @@ import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "
 import { formSchema } from "./formSchema";
 import { useFormatViewNumber } from "@/hooks/formatViewNumber";
 import { cn } from "@/lib/utils";
+import { Reorder, useDragControls } from "framer-motion"
 
 export default function Body({ item }: { item: Awaited<ReturnType<typeof getListDetails>>["items"][number] }) {
     const [isOpen, setIsOpen] = React.useState(false);
@@ -28,6 +29,7 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
     const [isDeleting, setIsDeleting] = React.useState(false)
     const params = useParams()
     const isMobile = useIsMobile()
+    const controls = useDragControls()
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -80,9 +82,19 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
 
     return (
         <>
-
-            <div className={cn("grid grid-cols-10 bg-white", item.isActive ? " p-4 rounded-md" : "opacity-50 p-4 rounded-md")}>
-                <div className="flex flex-col gap-2 col-span-8">
+            <Reorder.Item
+                value={item}
+                dragListener={false}
+                dragControls={controls}
+                className={cn("grid grid-cols-[min-content_1fr_min-content] gap-4 bg-white", item.isActive ? " p-4 rounded-md" : "opacity-50 p-4 rounded-md",)}
+            >
+                <div
+                    onPointerDown={(e) => controls.start(e)}
+                    className="flex items-center justify-center grid-col-start-1 grid-col-end-1 hover:cursor-grab"
+                >
+                    <GripIcon size={16} />
+                </div>
+                <div className="flex flex-col gap-2 col-span-8 select-none">
                     <div className="flex flex-col">
                         <h1 className="font-bold truncate" >{item.name}</h1>
                         <a href={item.link ?? "#"} target="_blank" className="flex items-center gap-2">
@@ -105,7 +117,7 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
                         <DropdownMenuItem onClick={() => handleDeleteItem(item)}>Excluir</DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
-            </div>
+            </Reorder.Item>
 
             {isMobile ? (
                 <>

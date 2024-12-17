@@ -3,9 +3,9 @@ import React from "react";
 
 
 import Header from "./header";
-import Body from "./body";
 
 import { getListDetails } from "@/services/lists";
+import Items from "./items";
 
 
 export default async function ListPage({ params }: { params: Promise<{ list: string }> }) {
@@ -17,11 +17,7 @@ export default async function ListPage({ params }: { params: Promise<{ list: str
             <div className="flex flex-col gap-10">
                 <Header data={data} />
                 <div className="flex flex-col gap-4">
-                    <div className="flex flex-col gap-2 ">
-                        {data?.items.map((item) => (
-                            <Body item={item} key={item.id} />
-                        ))}
-                    </div>
+                    <Items data={data} />
                 </div>
             </div >
 

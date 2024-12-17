@@ -26,8 +26,7 @@ export const listItemsTable = sqliteTable("listItems", {
     createdAt: int().notNull().default(sql`CURRENT_TIMESTAMP`),
     updatedAt: int().notNull().default(sql`CURRENT_TIMESTAMP`),
     isActive: int().notNull().default(1),
-
-
+    order: int().notNull().default(0),
 });
 
 export const listInsertSchema = createInsertSchema(listsTable);
