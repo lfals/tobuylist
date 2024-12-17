@@ -3,8 +3,9 @@
 import db from "@/db/drizzle";
 import { listItemsTable, listsTable } from "@/db/schema";
 import { currentUser } from "@clerk/nextjs/server";
-import { and, eq, sum } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { randomUUID } from 'node:crypto'
 
 export async function editList(list: Omit<typeof listsTable.$inferInsert, 'id' | 'userId'>, listId: string) {
@@ -46,7 +47,8 @@ export const getListDetails = async (listId: string) => {
 
     const list = await db.select().from(listsTable).where(and(eq(listsTable.id, listId), eq(listsTable.userId, user?.id!)))
     const listItems = await db.select().from(listItemsTable).where(eq(listItemsTable.listId, listId))
-    const totalValue = listItems.reduce((acc, item) => acc + item.price * item.quantity, 0)
+    const listItemsTotal = await db.select().from(listItemsTable).where(and(eq(listItemsTable.listId, listId), eq(listItemsTable.isActive, 1)))
+    const totalValue = listItemsTotal.reduce((acc, item) => acc + item.price * item.quantity, 0)
     return { ...list[0], items: listItems, totalValue }
 }
 
@@ -73,4 +75,20 @@ export async function getListDashboard() {
 
 
     return newList
+}
+
+
+export async function duplicateList(listId: string) {
+    const list = await getListDetails(listId)
+    const newList = await createList({ ...list, name: `${list.name} - Copia` })
+
+    const newListItems = list.items.map(item => {
+        const { id, ...rest } = item
+        return { ...rest, listId: newList.id }
+    })
+    await db.insert(listItemsTable).values(newListItems)
+
+
+    revalidatePath(`/app`)
+    redirect(`/app/${newList.id}`)
 }

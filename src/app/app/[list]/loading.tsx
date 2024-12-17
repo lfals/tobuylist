@@ -7,12 +7,12 @@ export default function Loading() {
         <>
             <div className="flex flex-col gap-10">
                 <div className="flex items-center justify-between">
-                    <div className="flex flex-col gap-2">
-                        <Skeleton className="w-full h-8" />
-                        <Skeleton className="w-full h-8" />
+                    <div className="flex flex-col gap-2 w-2/4">
+                        <Skeleton className="w-full h-9" />
+                        <Skeleton className="w-full h-9" />
                     </div>
-                    <div>
-                        <Skeleton className="w-full h-8" />
+                    <div className="w-1/6">
+                        <Skeleton className="w-full h-9" />
                     </div>
                 </div>
                 <div className="flex flex-col gap-4">

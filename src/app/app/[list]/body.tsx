@@ -13,13 +13,14 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { getListDetails } from "@/services/lists";
-import { deleteListItem, editListItem } from "@/services/listItem";
+import { deleteListItem, editListItem, markListItem } from "@/services/listItem";
 import Image from "next/image";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { formSchema } from "./formSchema";
 import { useFormatViewNumber } from "@/hooks/formatViewNumber";
+import { cn } from "@/lib/utils";
 
 export default function Body({ item }: { item: Awaited<ReturnType<typeof getListDetails>>["items"][number] }) {
     const [isOpen, setIsOpen] = React.useState(false);
@@ -65,6 +66,10 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
         form.setValue("quantity", item.quantity.toString())
     }
 
+    async function handleMarkItem(item: any) {
+        await markListItem(params.list as string, item.id, item.isActive ? 0 : 1)
+    }
+
     useEffect(() => {
         if (!isOpen) {
             setEditingItem(null)
@@ -76,13 +81,13 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
     return (
         <>
 
-            <div className="grid grid-cols-10 bg-white p-4 rounded-md ">
+            <div className={cn("grid grid-cols-10 bg-white", item.isActive ? " p-4 rounded-md" : "opacity-50 p-4 rounded-md")}>
                 <div className="flex flex-col gap-2 col-span-8">
                     <div className="flex flex-col">
                         <h1 className="font-bold truncate" >{item.name}</h1>
                         <a href={item.link ?? "#"} target="_blank" className="flex items-center gap-2">
+                            {item.link && <Image src={`https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${item.link}&size=24#refinements`} alt={item.name} width={16} height={16} />}
                             <p>{item.store ?? <>&nbsp;</>}</p>
-                            {item.link && <Image src={`https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${item.link}&size=16#refinements`} alt={item.name} width={16} height={16} />}
                         </a>
 
                     </div>
@@ -95,8 +100,7 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                        {/* <DropdownMenuItem>Marcar</DropdownMenuItem> */}
-                        {/* <DropdownMenuSeparator /> */}
+                        <DropdownMenuItem onClick={() => handleMarkItem(item)}>{item.isActive ? "Desabilitar" : "Habilitar"}</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleEditItem(item)}>Editar</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleDeleteItem(item)}>Excluir</DropdownMenuItem>
                     </DropdownMenuContent>

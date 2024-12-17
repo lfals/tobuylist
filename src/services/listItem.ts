@@ -38,3 +38,7 @@ export const editListItem = async (listId: string, data: z.infer<typeof listItem
     return listItem
 }
 
+export const markListItem = async (listId: string, itemId: number, isActive: number) => {
+    await db.update(listItemsTable).set({ isActive }).where(eq(listItemsTable.id, itemId))
+    revalidatePath(`/app/${listId}`)
+}

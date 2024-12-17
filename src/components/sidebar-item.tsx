@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { SidebarMenuButton } from "./ui/sidebar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { MoreVerticalIcon } from "lucide-react";
 import {
     AlertDialog,
@@ -16,7 +16,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useState } from "react"
-import { deleteList, changeListVisibility, getAll } from "@/services/lists";
+import { deleteList, changeListVisibility, getAll, duplicateList } from "@/services/lists";
 import { buttonVariants } from "./ui/button";
 import { cn } from "@/lib/utils";
 
@@ -36,6 +36,7 @@ export function SidebarItem({ item }: { item: Awaited<ReturnType<typeof getAll>>
                                 <MoreVerticalIcon size={16} />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
+                                <DropdownMenuItem className={cn("cursor-pointer")} onClick={() => duplicateList(item.id)}>Duplicar</DropdownMenuItem>
                                 <DropdownMenuItem className={cn("cursor-pointer")} onClick={() => changeListVisibility(item.id, item.isActive ? 0 : 1)}>{item.isActive ? "Desabilitar" : "Habilitar"}</DropdownMenuItem>
                                 <DropdownMenuItem className={cn("cursor-pointer")} onClick={() => setIsOpen(true)}>Excluir</DropdownMenuItem>
                             </DropdownMenuContent>
