@@ -22,7 +22,7 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
 
 	return (
 		<>
-			<Sidebar {...props}>
+			<Sidebar {...props} collapsible={"none"}>
 				<SidebarHeader>
 					<SidebarHeaderItem />
 				</SidebarHeader>
