@@ -17,14 +17,12 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
-import { useQueryClient } from "@tanstack/react-query";
 
 
 export default function SharedHeader({ data }: { data: any }) {
     const [isOpen, setIsOpen] = useState(false);
     const params = useParams()
     const isMobile = useIsMobile()
-    const queryClient = useQueryClient()
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -44,7 +42,6 @@ export default function SharedHeader({ data }: { data: any }) {
             quantity: Number(values.quantity),
             listId: params.list as string
         })
-        queryClient.invalidateQueries({ queryKey: ['list', params.list] })
         setIsOpen(false)
     }
 
