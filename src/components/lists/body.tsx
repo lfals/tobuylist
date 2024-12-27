@@ -6,7 +6,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useFormatNumber } from "@/hooks/use-formatNumber";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { GripIcon, MoreHorizontalIcon } from "lucide-react";
+import { GripIcon, Loader2Icon, MoreHorizontalIcon } from "lucide-react";
 import { useParams, useSearchParams } from "next/navigation";
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
@@ -30,6 +30,7 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
     const [isOpen, setIsOpen] = React.useState(false);
     const [editingItem, setEditingItem] = React.useState<any>(null)
     const [isDeleting, setIsDeleting] = React.useState(false)
+    const [isLoading, setIsLoading] = React.useState(false)
     const params = useParams()
     const isMobile = useIsMobile()
     const controls = useDragControls()
@@ -72,6 +73,13 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
         form.setValue("store", item.store)
         form.setValue("price", useFormatNumber(item.price.toString()))
         form.setValue("quantity", item.quantity.toString())
+    }
+
+    async function handleDeleteListItem() {
+        setIsLoading(true)
+        await deleteListItem(editingItem)
+        setIsLoading(false)
+        setIsDeleting(false)
     }
 
     async function handleMarkItem(item: any) {
@@ -339,7 +347,9 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction className={buttonVariants({ variant: "destructive" })} onClick={() => deleteListItem(editingItem)}>Excluir</AlertDialogAction>
+                        <AlertDialogAction disabled={isLoading} className={buttonVariants({ variant: "destructive" })} onClick={handleDeleteListItem}>
+                            {isLoading ? <Loader2Icon size={16} className="animate-spin" /> : "Excluir"}
+                        </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

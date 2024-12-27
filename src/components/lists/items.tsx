@@ -1,12 +1,12 @@
 "use client"
 
 import { Reorder } from "framer-motion"
-import { getListDetails } from "@/services/lists"
+import { getListDetails, getSharedListDetails } from "@/services/lists"
 import Body from "./body"
 import { useEffect, useState } from "react"
 import { reorderListItem } from "@/services/listItem"
 
-export default function Items({ data }: { data: Awaited<ReturnType<typeof getListDetails>> }) {
+export default function Items({ data }: { data: Awaited<ReturnType<typeof getListDetails>> | Awaited<ReturnType<typeof getSharedListDetails>> }) {
     const [items, setItems] = useState(data?.items)
     const [debouncedItems, setDebouncedItems] = useState(items)
 
@@ -26,6 +26,10 @@ export default function Items({ data }: { data: Awaited<ReturnType<typeof getLis
 
         return () => clearTimeout(timeoutId)
     }, [items])
+
+    useEffect(() => {
+        setItems(data?.items)
+    }, [data])
 
 
 
