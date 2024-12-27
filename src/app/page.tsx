@@ -1,8 +1,15 @@
 import { Button } from "@/components/ui/button";
-import { GoogleOneTap, SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
-import Link from "next/link";
+import { GoogleOneTap, SignInButton } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 
-export default function Home() {
+export default async function Home() {
+	const { userId } = await auth()
+
+	if (userId) {
+		redirect("/app")
+	}
+
 	return (
 		<div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
 			<main className="flex flex-col gap-4 row-start-2 items-center w-full max-w-xl">
@@ -13,17 +20,11 @@ export default function Home() {
 					A simple app to help you keep track of everything you need to buy.
 				</p>
 				<div>
+
 					<GoogleOneTap />
-					<SignedIn>
-						<Link href="/app">
-							<Button>Dashboard</Button>
-						</Link>
-					</SignedIn>
-					<SignedOut>
-						<SignInButton>
-							<Button>Sign in</Button>
-						</SignInButton>
-					</SignedOut>
+					<SignInButton mode="modal" >
+						<Button>Sign in</Button>
+					</SignInButton>
 				</div>
 			</main>
 		</div>
