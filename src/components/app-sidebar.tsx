@@ -22,7 +22,7 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
 
 	return (
 		<>
-			<Sidebar {...props} collapsible={"none"}>
+			<Sidebar {...props} collapsible={"none"} className="h-screen">
 				<SidebarHeader>
 					<SidebarHeaderItem />
 				</SidebarHeader>
