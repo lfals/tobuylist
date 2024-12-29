@@ -18,7 +18,6 @@ export default function Items({ data }: { data: Awaited<ReturnType<typeof getLis
                     ...item,
                     order: index
                 }))
-                console.log(updatedItems)
                 await reorderListItem(updatedItems)
                 setDebouncedItems(updatedItems)
             }

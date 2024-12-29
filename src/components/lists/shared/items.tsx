@@ -10,7 +10,6 @@ export default function Items({ data }: { data: Awaited<ReturnType<typeof getLis
     const [items, setItems] = useState(data?.items)
     const [debouncedItems, setDebouncedItems] = useState(items)
 
-    console.log(data)
 
 
     useEffect(() => {
@@ -20,7 +19,6 @@ export default function Items({ data }: { data: Awaited<ReturnType<typeof getLis
                     ...item,
                     order: index
                 }))
-                console.log(updatedItems)
                 await reorderListItem(updatedItems)
                 setDebouncedItems(updatedItems)
             }

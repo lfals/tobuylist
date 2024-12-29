@@ -34,7 +34,7 @@ export interface Image {
 }
 
 
-async function getItemImage(params: string) {
+export async function getItemImage(params: string, next?: boolean) {
 
 
     const url = new URL("https://www.googleapis.com/customsearch/v1")
@@ -47,6 +47,11 @@ async function getItemImage(params: string) {
     url.searchParams.append("safe", "active")
     url.searchParams.append("excludeTerms", "http")
 
+    if (next === true) {
+        url.searchParams.append("start", "6")
+    }
+
+
     const request = await fetch(url.href, {
         method: "GET",
         redirect: "follow"
@@ -54,7 +59,6 @@ async function getItemImage(params: string) {
 
     if (request.ok) {
         const response: Root = await request.json()
-        console.log(response.items)
         const result = response.items.find(item => item.link.includes("https://"))
         return result?.link || ""
     }
@@ -99,8 +103,7 @@ export const editListItem = async (listId: string, data: z.infer<typeof listItem
     }
 
 
-
-    const listItem = await db.update(listItemsTable).set({ ...data, imageUrl, price: Number(data.price.replace("R$ ", "").replace(",", "").replace(".", "")) }).where(eq(listItemsTable.id, data.id!)).returning()
+    const listItem = await db.update(listItemsTable).set({ ...data, imageUrl, price: Number(String(data.price).replace("R$ ", "").replace(",", "").replace(".", "")) }).where(eq(listItemsTable.id, data.id!)).returning()
 
     revalidatePath(`/app/${listId}`)
     return listItem

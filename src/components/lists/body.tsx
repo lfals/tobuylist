@@ -13,7 +13,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { getListDetails } from "@/services/lists";
-import { deleteListItem, editListItem, markListItem } from "@/services/listItem";
+import { deleteListItem, editListItem, getItemImage, markListItem } from "@/services/listItem";
 import Image from "next/image";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -82,6 +82,15 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
         setIsDeleting(false)
     }
 
+    async function handleErroredImage(item: any) {
+        const newImage = await getItemImage(item.name, true)
+
+        editListItem(params.list as string, {
+            ...item,
+            imageUrl: newImage
+        })
+    }
+
     async function handleMarkItem(item: any) {
         await markListItem(params.list as string, item.id, item.isActive ? 0 : 1)
     }
@@ -114,7 +123,7 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
                 )}
                 <div className=" h-full aspect-square rounded-sm flex items-center justify-center">
                     {item.imageUrl ? (
-                        <Image src={item.imageUrl} alt={item.name} width={80} height={80} />
+                        <Image src={item.imageUrl} onError={() => handleErroredImage(item)} alt={item.name.slice(0, 10)} width={80} height={80} />
                     ) : (<>
                         <div className="bg-gray-200  h-full aspect-square rounded-sm flex items-center justify-center">
                             <ImageOffIcon />

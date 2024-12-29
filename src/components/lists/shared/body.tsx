@@ -30,7 +30,6 @@ export default function Body({ item, isPublic }: { item: Awaited<ReturnType<type
     const params = useParams()
     const isMobile = useIsMobile()
     const controls = useDragControls()
-    console.log(isPublic)
 
 
     const searchParams = useSearchParams()
