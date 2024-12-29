@@ -24,6 +24,7 @@ export const listItemsTable = sqliteTable("listItems", {
     link: text(),
     price: int().notNull(),
     quantity: int().notNull(),
+    imageUrl: text(),
 
     createdAt: int().notNull().default(sql`CURRENT_TIMESTAMP`),
     updatedAt: int().notNull().default(sql`CURRENT_TIMESTAMP`),

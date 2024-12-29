@@ -18,6 +18,8 @@ import { formSchema } from "./formSchema";
 import EditList from "./editList";
 import { ShareList } from "./shareList";
 import { SaveList } from "./saveList";
+import { Switch } from "../ui/switch";
+import { Label } from "../ui/label";
 
 
 export default function Header({ data }: { data?: Awaited<ReturnType<typeof getListDetails>> }) {
@@ -261,8 +263,8 @@ export default function Header({ data }: { data?: Awaited<ReturnType<typeof getL
                                                 </FormItem>
                                             )}
                                         />
-
                                     </div>
+
                                     <DialogFooter>
                                         <Button type="submit" form="create-item-form">Adicionar</Button>
                                     </DialogFooter>

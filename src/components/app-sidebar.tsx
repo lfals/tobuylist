@@ -22,7 +22,7 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
 
 	return (
 		<>
-			<Sidebar {...props} collapsible={"none"} className="h-screen">
+			<Sidebar {...props} collapsible={"offcanvas"} className="h-screen ">
 				<SidebarHeader>
 					<SidebarHeaderItem />
 				</SidebarHeader>
@@ -33,7 +33,7 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
 						</React.Suspense>
 					</SidebarMenu>
 				</SidebarContent>
-				<SidebarRail />
+				{/* <SidebarRail /> */}
 			</Sidebar>
 		</>
 	);
