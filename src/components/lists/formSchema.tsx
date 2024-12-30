@@ -6,6 +6,7 @@ export const formSchema = z.object({
     }),
     link: z.union([z.literal(""), z.string().trim().url()]),
     store: z.string(),
+    imageUrl: z.string(),
     price: z.string().transform((val) => {
         return String(val).replace(/[^\d.,]/g, '').replace(',', '').replace('.', '')
     }),

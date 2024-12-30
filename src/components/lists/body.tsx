@@ -70,6 +70,7 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
         setEditingItem(item)
         form.setValue("name", item.name)
         form.setValue("link", item.link)
+        form.setValue("imageUrl", item.imageUrl)
         form.setValue("store", item.store)
         form.setValue("price", useFormatNumber(item.price.toString()))
         form.setValue("quantity", item.quantity.toString())
@@ -212,6 +213,21 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
                                             )}
                                         />
 
+                                        <FormField
+                                            control={form.control}
+                                            name="imageUrl"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Imagem</FormLabel>
+                                                    <FormControl>
+                                                        <Input type="text" placeholder="https://site.com.br/image.jpg" {...field} value={field.value ?? ''} />
+                                                    </FormControl>
+
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+
                                         <div className="flex gap-2">
                                             <FormField
                                                 control={form.control}
@@ -302,6 +318,21 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
                                                     <FormLabel>URL</FormLabel>
                                                     <FormControl>
                                                         <Input type="text" placeholder="shadcn" {...field} value={field.value ?? ''} />
+                                                    </FormControl>
+
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        <FormField
+                                            control={form.control}
+                                            name="imageUrl"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Imagem</FormLabel>
+                                                    <FormControl>
+                                                        <Input type="text" placeholder="https://site.com.br/image.jpg" {...field} value={field.value ?? ''} />
                                                     </FormControl>
 
                                                     <FormMessage />

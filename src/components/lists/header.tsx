@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useFormatNumber } from "@/hooks/use-formatNumber";
 import { getListDetails } from "@/services/lists";
@@ -18,13 +18,13 @@ import { formSchema } from "./formSchema";
 import EditList from "./editList";
 import { ShareList } from "./shareList";
 import { SaveList } from "./saveList";
-import { Switch } from "../ui/switch";
-import { Label } from "../ui/label";
+import { Loader2Icon } from "lucide-react";
 
 
 export default function Header({ data }: { data?: Awaited<ReturnType<typeof getListDetails>> }) {
     const [isOpen, setIsOpen] = React.useState(false);
     const params = useParams()
+    const [isSaving, setIsSaving] = useState(false)
     const searchParams = useSearchParams()
     const isShared = searchParams.get('share')
     const isMobile = useIsMobile()
@@ -36,6 +36,7 @@ export default function Header({ data }: { data?: Awaited<ReturnType<typeof getL
         defaultValues: {
             name: "",
             link: "",
+            imageUrl: "",
             store: "",
             price: "R$ 0,00",
             quantity: "1",
@@ -43,12 +44,13 @@ export default function Header({ data }: { data?: Awaited<ReturnType<typeof getL
     })
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
-
+        setIsSaving(true)
         await createListItem(params.list as string, {
             ...values,
             quantity: Number(values.quantity),
             listId: params.list as string
         })
+        setIsSaving(false)
         setIsOpen(false)
     }
 
@@ -96,7 +98,7 @@ export default function Header({ data }: { data?: Awaited<ReturnType<typeof getL
                                             <FormItem>
                                                 <FormLabel>Item</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="shadcn" {...field} />
+                                                    <Input placeholder="Nome do item" {...field} />
                                                 </FormControl>
 
                                                 <FormMessage />
@@ -110,7 +112,7 @@ export default function Header({ data }: { data?: Awaited<ReturnType<typeof getL
                                             <FormItem>
                                                 <FormLabel>Loja</FormLabel>
                                                 <FormControl>
-                                                    <Input type="text" placeholder="shadcn" {...field} value={field.value ?? ''} />
+                                                    <Input type="text" placeholder="Nome da loja" {...field} value={field.value ?? ''} />
                                                 </FormControl>
 
                                                 <FormMessage />
@@ -122,16 +124,28 @@ export default function Header({ data }: { data?: Awaited<ReturnType<typeof getL
                                         name="link"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>URL</FormLabel>
+                                                <FormLabel>Link</FormLabel>
                                                 <FormControl>
-                                                    <Input type="text" placeholder="shadcn" {...field} value={field.value ?? ''} />
+                                                    <Input type="text" placeholder="https://loja.com.br" {...field} value={field.value ?? ''} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="imageUrl"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Imagem</FormLabel>
+                                                <FormControl>
+                                                    <Input type="url" placeholder="https://site.com.br/image.jpg" {...field} value={field.value ?? ''} />
                                                 </FormControl>
 
                                                 <FormMessage />
                                             </FormItem>
                                         )}
                                     />
-
                                     <div className="flex gap-2">
                                         <FormField
                                             control={form.control}
@@ -167,6 +181,7 @@ export default function Header({ data }: { data?: Awaited<ReturnType<typeof getL
                                             )}
                                         />
                                     </div>
+
                                     <DrawerFooter>
                                         <Button type="submit" form="create-item-form">Adicionar</Button>
                                     </DrawerFooter>
@@ -193,7 +208,7 @@ export default function Header({ data }: { data?: Awaited<ReturnType<typeof getL
                                             <FormItem>
                                                 <FormLabel>Item</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="shadcn" {...field} />
+                                                    <Input placeholder="Nome do item" {...field} />
                                                 </FormControl>
 
                                                 <FormMessage />
@@ -207,7 +222,7 @@ export default function Header({ data }: { data?: Awaited<ReturnType<typeof getL
                                             <FormItem>
                                                 <FormLabel>Loja</FormLabel>
                                                 <FormControl>
-                                                    <Input type="text" placeholder="shadcn" {...field} value={field.value ?? ''} />
+                                                    <Input type="text" placeholder="Nome da loja" {...field} value={field.value ?? ''} />
                                                 </FormControl>
 
                                                 <FormMessage />
@@ -219,16 +234,28 @@ export default function Header({ data }: { data?: Awaited<ReturnType<typeof getL
                                         name="link"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>URL</FormLabel>
+                                                <FormLabel>Link</FormLabel>
                                                 <FormControl>
-                                                    <Input type="text" placeholder="shadcn" {...field} value={field.value ?? ''} />
+                                                    <Input type="text" placeholder="https://loja.com.br" {...field} value={field.value ?? ''} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="imageUrl"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Imagem</FormLabel>
+                                                <FormControl>
+                                                    <Input type="text" placeholder="https://site.com.br/image.jpg" {...field} value={field.value ?? ''} />
                                                 </FormControl>
 
                                                 <FormMessage />
                                             </FormItem>
                                         )}
                                     />
-
                                     <div className="flex gap-2">
                                         <FormField
                                             control={form.control}
@@ -266,7 +293,7 @@ export default function Header({ data }: { data?: Awaited<ReturnType<typeof getL
                                     </div>
 
                                     <DialogFooter>
-                                        <Button type="submit" form="create-item-form">Adicionar</Button>
+                                        <Button type="submit" disabled={isSaving} form="create-item-form">{isSaving ? <Loader2Icon size={16} className="animate-spin" /> : "Adicionar"}</Button>
                                     </DialogFooter>
                                 </form>
                             </Form>

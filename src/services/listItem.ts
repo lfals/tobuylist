@@ -44,22 +44,27 @@ export async function getItemImage(params: string, next?: boolean) {
     url.searchParams.append("q", params)
     url.searchParams.append("num", "5")
     url.searchParams.append("searchType", "image")
-    url.searchParams.append("safe", "active")
-    url.searchParams.append("excludeTerms", "http")
+    // url.searchParams.append("safe", "active")
+    url.searchParams.append("siteSearchFilter", "e")
+    url.searchParams.append("siteSearch", "www.instagram.com")
+    url.searchParams.append("siteSearch", "www.tiktok.com")
 
     if (next === true) {
         url.searchParams.append("start", "6")
     }
 
-
+    console.log(url.href)
     const request = await fetch(url.href, {
         method: "GET",
         redirect: "follow"
     })
 
+    console.log(JSON.stringify(request))
     if (request.ok) {
         const response: Root = await request.json()
+        console.log(JSON.stringify(response))
         const result = response.items.find(item => item.link.includes("https://"))
+
         return result?.link || ""
     }
 
@@ -74,10 +79,15 @@ export const createListItem = async (listId: string, data: z.infer<typeof listIt
         data.store = new URL(data.link).hostname
     }
 
-    const imageUrl = await getItemImage(data.name)
+    console.log(data.imageUrl)
+
+    if (data.imageUrl === "") {
+        data.imageUrl = await getItemImage(data.name)
+    }
 
 
-    const listItem = await db.insert(listItemsTable).values({ ...data, price: Number(data.price), imageUrl, listId }).returning()
+
+    const listItem = await db.insert(listItemsTable).values({ ...data, price: Number(data.price), listId }).returning()
 
     revalidatePath(`/app/${listId}`)
     return listItem
@@ -96,14 +106,8 @@ export const editListItem = async (listId: string, data: z.infer<typeof listItem
         data.store = new URL(data.link).hostname.replace("www.", "").split(".")[0]
     }
 
-    let imageUrl = data.imageUrl
 
-    if (!data.imageUrl) {
-        imageUrl = await getItemImage(data.name)
-    }
-
-
-    const listItem = await db.update(listItemsTable).set({ ...data, imageUrl, price: Number(String(data.price).replace("R$ ", "").replace(",", "").replace(".", "")) }).where(eq(listItemsTable.id, data.id!)).returning()
+    const listItem = await db.update(listItemsTable).set({ ...data, price: Number(String(data.price).replace("R$ ", "").replace(",", "").replace(".", "")) }).where(eq(listItemsTable.id, data.id!)).returning()
 
     revalidatePath(`/app/${listId}`)
     return listItem
