@@ -46,8 +46,7 @@ export async function getItemImage(params: string, next?: boolean) {
     url.searchParams.append("searchType", "image")
     // url.searchParams.append("safe", "active")
     url.searchParams.append("siteSearchFilter", "e")
-    url.searchParams.append("siteSearch", "www.instagram.com")
-    url.searchParams.append("siteSearch", "www.tiktok.com")
+    url.searchParams.append("siteSearch", "instagram.com|tiktok.com")
 
     if (next === true) {
         url.searchParams.append("start", "6")
@@ -59,14 +58,15 @@ export async function getItemImage(params: string, next?: boolean) {
         redirect: "follow"
     })
 
-    console.log(JSON.stringify(request))
     if (request.ok) {
         const response: Root = await request.json()
-        console.log(JSON.stringify(response))
         const result = response.items.find(item => item.link.includes("https://"))
 
         return result?.link || ""
     }
+
+    console.log(request)
+
 
     return ""
 
