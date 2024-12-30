@@ -7,6 +7,7 @@ import {
 
 import { Analytics } from "@vercel/analytics/react"
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { ThemeProvider } from "@/components/theme-provider";
 
 const geistSans = localFont({
 	src: "./fonts/GeistVF.woff",
@@ -30,12 +31,20 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
+
 		<ClerkProvider>
 			<html lang="en">
 				<body
-					className={`${geistSans.variable} ${geistMono.variable} antialiased  bg-gray-100`}
+					className={`${geistSans.variable} ${geistMono.variable} antialiased  bg-gray-100 dark:bg-neutral-950`}
 				>
-					{children}
+					<ThemeProvider
+						attribute="class"
+						defaultTheme="system"
+						enableSystem
+						disableTransitionOnChange
+					>
+						{children}
+					</ThemeProvider>
 				</body>
 			</html>
 			<Analytics />

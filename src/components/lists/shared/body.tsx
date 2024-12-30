@@ -91,7 +91,7 @@ export default function Body({ item, isPublic }: { item: Awaited<ReturnType<type
                 dragListener={false}
 
                 dragControls={Boolean(isShared) ? undefined : controls}
-                className={cn("grid grid-cols-[min-content_1fr_min-content] gap-4 bg-white", item.isActive ? " p-4 rounded-md" : "opacity-50 p-4 rounded-md",)}
+                className={cn("grid grid-cols-[min-content_1fr_min-content] gap-4 bg-white dark:bg-neutral-900", item.isActive ? " p-4 rounded-md" : "opacity-50 p-4 rounded-md",)}
             >
                 {isPublic && (
                     <div

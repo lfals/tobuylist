@@ -112,7 +112,7 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
                 dragListener={false}
                 onPointerDown={(e: any) => controls.start(e)}
                 dragControls={Boolean(isShared) ? undefined : controls}
-                className={cn("grid grid-cols-[min-content_min-content_1fr_min-content] gap-4 bg-white", item.isActive ? " p-4 rounded-md" : "opacity-50 p-4 rounded-md",)}
+                className={cn("grid grid-cols-[min-content_min-content_1fr_min-content] gap-4 bg-white dark:bg-neutral-900", item.isActive ? " p-4 rounded-md" : "opacity-50 p-4 rounded-md ",)}
             >
                 {!Boolean(isShared) && (
                     <div
