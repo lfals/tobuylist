@@ -70,7 +70,7 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
         setEditingItem(item)
         form.setValue("name", item.name)
         form.setValue("link", item.link)
-        form.setValue("imageUrl", item.imageUrl)
+        form.setValue("imageUrl", item.imageUrl || "")
         form.setValue("store", item.store)
         form.setValue("price", useFormatNumber(item.price.toString()))
         form.setValue("quantity", item.quantity.toString())
