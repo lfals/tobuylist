@@ -11,7 +11,7 @@ export function useFormatViewNumber(value: string) {
         return "R$ " + (parsedValue / 1_000_000).toFixed(2) + " mi"
     }
 
-    if (parsedValue > 1000) {
+    if (parsedValue > 100_000) {
         return "R$ " + (parsedValue / 1000).toFixed(2) + " mil"
     }
 
