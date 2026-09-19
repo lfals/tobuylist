@@ -147,7 +147,12 @@ function isType(record: Record<string, unknown>, expected: string) {
 	return jsonLdTypes(record).some((type) => type === expected.toLowerCase() || type.endsWith("/" + expected.toLowerCase()))
 }
 
-function offerFromUnknown(offers: unknown) {
+type OfferPrices = {
+	price?: number
+	originalPrice?: number
+}
+
+function offerFromUnknown(offers: unknown): OfferPrices {
 	const list = Array.isArray(offers) ? offers : offers ? [offers] : []
 	for (const offer of list) {
 		if (!offer || typeof offer !== "object") {
@@ -161,7 +166,7 @@ function offerFromUnknown(offers: unknown) {
 	return {}
 }
 
-function offerFromRecord(record: Record<string, unknown>) {
+function offerFromRecord(record: Record<string, unknown>): OfferPrices {
 	const spec = record.priceSpecification
 	const fromSpec = spec && typeof spec === "object" && spec !== record ? offerFromUnknown(spec) : {}
 	const price =
