@@ -16,6 +16,8 @@ export function useAutofillFromLink(form: UseFormReturn<ItemFormValues>, isOpen:
 	const requestId = useRef(0)
 
 	useEffect(() => {
+		const currentRequest = ++requestId.current
+
 		if (!isOpen) {
 			setIsFetching(false)
 			return
@@ -43,7 +45,6 @@ export function useAutofillFromLink(form: UseFormReturn<ItemFormValues>, isOpen:
 			form.setValue("store", store)
 		}
 
-		const currentRequest = ++requestId.current
 		setIsFetching(true)
 		const timeout = setTimeout(async () => {
 			try {
