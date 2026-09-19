@@ -63,6 +63,7 @@ export function NewItemForm({
 									placeholder="https://loja.com.br/produto"
 									{...field}
 									value={field.value ?? ""}
+									disabled={isFetching}
 								/>
 							</FormControl>
 							<FormMessage />
