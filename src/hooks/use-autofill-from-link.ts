@@ -28,7 +28,11 @@ export function useAutofillFromLink(form: UseFormReturn<ItemFormValues>, isOpen:
 		}
 
 		try {
-			new URL(trimmed)
+			const parsed = new URL(trimmed)
+			if (!["http:", "https:"].includes(parsed.protocol) || !parsed.hostname.includes(".")) {
+				setIsFetching(false)
+				return
+			}
 		} catch {
 			setIsFetching(false)
 			return
