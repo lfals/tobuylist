@@ -1,15 +1,64 @@
 "use server"
 
+import { lookup } from "node:dns/promises"
+import { isIP } from "node:net"
 import { formatBRL, isBlockedProductHtml, parseMoney, parseProductHtml, type ProductFromLink } from "@/lib/productFromHtml"
 import { storeFromUrl } from "@/lib/storeFromUrl"
 
 const FETCH_TIMEOUT_MS = 12_000
 const MAX_HTML_BYTES = 2_500_000
+const MAX_REDIRECTS = 5
 const BROWSER_HEADERS = {
 	"User-Agent":
 		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
 	Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 	"Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
+}
+
+function isPrivateIPv4(address: string) {
+	const octets = address.split(".").map(Number)
+	if (octets.length !== 4 || octets.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) {
+		return true
+	}
+	const [a, b] = octets
+	return (
+		a === 0 ||
+		a === 10 ||
+		a === 127 ||
+		(a === 169 && b === 254) ||
+		(a === 172 && b >= 16 && b <= 31) ||
+		(a === 192 && b === 168) ||
+		(a === 100 && b >= 64 && b <= 127) ||
+		a >= 224
+	)
+}
+
+function isPrivateIPv6(address: string) {
+	const bare = address.toLowerCase().split("%")[0]
+	if (bare === "::" || bare === "::1") {
+		return true
+	}
+	if (bare.startsWith("::ffff:")) {
+		const mapped = bare.slice(7)
+		return isIP(mapped) === 4 ? isPrivateIPv4(mapped) : true
+	}
+
+	const first = bare.startsWith("::") ? 0 : Number.parseInt(bare.split(":")[0] || "0", 16)
+	if (!Number.isFinite(first)) {
+		return true
+	}
+	return (first >= 0xfc00 && first <= 0xfdff) || (first >= 0xfe80 && first <= 0xfebf)
+}
+
+function isPrivateIp(address: string) {
+	const version = isIP(address)
+	if (version === 4) {
+		return isPrivateIPv4(address)
+	}
+	if (version === 6) {
+		return isPrivateIPv6(address)
+	}
+	return true
 }
 
 function isSafeHttpUrl(url: string) {
@@ -21,14 +70,37 @@ function isSafeHttpUrl(url: string) {
 		const host = parsed.hostname.toLowerCase()
 		if (
 			host === "localhost" ||
+			host.endsWith(".localhost") ||
 			host.endsWith(".local") ||
-			host.endsWith(".internal") ||
-			/^(127\.|10\.|192\.168\.|169\.254\.)/.test(host) ||
-			/^172\.(1[6-9]|2\d|3[0-1])\./.test(host)
+			host.endsWith(".internal")
 		) {
 			return false
 		}
+		if (isIP(host) && isPrivateIp(host)) {
+			return false
+		}
 		return true
+	} catch {
+		return false
+	}
+}
+
+async function isSafeDestination(url: string) {
+	if (!isSafeHttpUrl(url)) {
+		return false
+	}
+
+	const host = new URL(url).hostname
+	if (isIP(host)) {
+		return !isPrivateIp(host)
+	}
+
+	try {
+		const addresses = await lookup(host, { all: true, verbatim: true })
+		if (!addresses.length) {
+			return false
+		}
+		return addresses.every((entry) => !isPrivateIp(entry.address))
 	} catch {
 		return false
 	}
@@ -51,28 +123,92 @@ function extractMercadoLivreIds(url: string) {
 	return { productId, itemId }
 }
 
-async function fetchHtml(url: string) {
-	const controller = new AbortController()
-	const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
+async function readLimitedText(response: Response, maxBytes = MAX_HTML_BYTES) {
+	if (!response.body) {
+		const text = await response.text()
+		return text.length > maxBytes ? text.slice(0, maxBytes) : text
+	}
+
+	const reader = response.body.getReader()
+	const chunks: Uint8Array[] = []
+	let total = 0
 
 	try {
-		const response = await fetch(url, {
-			headers: BROWSER_HEADERS,
-			redirect: "follow",
-			cache: "no-store",
-			signal: controller.signal,
-		})
-		if (!response.ok) {
-			return null
+		while (true) {
+			const { done, value } = await reader.read()
+			if (done) {
+				break
+			}
+			if (!value) {
+				continue
+			}
+			const remaining = maxBytes - total
+			if (value.byteLength >= remaining) {
+				chunks.push(value.slice(0, remaining))
+				await reader.cancel()
+				break
+			}
+			chunks.push(value)
+			total += value.byteLength
 		}
-		const buffer = await response.arrayBuffer()
-		const bytes = buffer.byteLength > MAX_HTML_BYTES ? buffer.slice(0, MAX_HTML_BYTES) : buffer
-		return new TextDecoder("utf-8", { fatal: false }).decode(bytes)
+	} catch {
+		await reader.cancel().catch(() => undefined)
+		return null
+	}
+
+	const merged = new Uint8Array(chunks.reduce((sum, chunk) => sum + chunk.byteLength, 0))
+	let offset = 0
+	for (const chunk of chunks) {
+		merged.set(chunk, offset)
+		offset += chunk.byteLength
+	}
+	return new TextDecoder("utf-8", { fatal: false }).decode(merged)
+}
+
+async function fetchSafe(url: string, init: RequestInit = {}) {
+	const controller = new AbortController()
+	const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
+	let current = url
+
+	try {
+		for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+			if (!(await isSafeDestination(current))) {
+				return null
+			}
+
+			const response = await fetch(current, {
+				...init,
+				redirect: "manual",
+				cache: "no-store",
+				signal: controller.signal,
+			})
+
+			if ([301, 302, 303, 307, 308].includes(response.status)) {
+				const location = response.headers.get("location")
+				await response.body?.cancel().catch(() => undefined)
+				if (!location) {
+					return null
+				}
+				current = new URL(location, current).toString()
+				continue
+			}
+
+			return response
+		}
+		return null
 	} catch {
 		return null
 	} finally {
 		clearTimeout(timeout)
 	}
+}
+
+async function fetchHtml(url: string) {
+	const response = await fetchSafe(url, { headers: BROWSER_HEADERS })
+	if (!response?.ok) {
+		return null
+	}
+	return readLimitedText(response)
 }
 
 function isMercadoLivreUrl(url: string) {
@@ -92,23 +228,20 @@ function shopifyHandlePath(url: string) {
 }
 
 async function fetchJson(url: string) {
-	const controller = new AbortController()
-	const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
+	const response = await fetchSafe(url, {
+		headers: { ...BROWSER_HEADERS, Accept: "application/json,text/javascript,*/*" },
+	})
+	if (!response?.ok) {
+		return null
+	}
+	const text = await readLimitedText(response)
+	if (!text) {
+		return null
+	}
 	try {
-		const response = await fetch(url, {
-			headers: { ...BROWSER_HEADERS, Accept: "application/json,text/javascript,*/*" },
-			redirect: "follow",
-			cache: "no-store",
-			signal: controller.signal,
-		})
-		if (!response.ok) {
-			return null
-		}
-		return await response.json()
+		return JSON.parse(text)
 	} catch {
 		return null
-	} finally {
-		clearTimeout(timeout)
 	}
 }
 
@@ -168,15 +301,18 @@ async function fetchMercadoLivreApi(url: string): Promise<ProductFromLink | null
 			`https://api.mercadolibre.com/products/${id}`,
 		]
 		for (const endpoint of endpoints) {
+			const response = await fetchSafe(endpoint, {
+				headers: { Accept: "application/json", "User-Agent": BROWSER_HEADERS["User-Agent"] },
+			})
+			if (!response?.ok) {
+				continue
+			}
+			const text = await readLimitedText(response)
+			if (!text) {
+				continue
+			}
 			try {
-				const response = await fetch(endpoint, {
-					headers: { Accept: "application/json", "User-Agent": BROWSER_HEADERS["User-Agent"] },
-					cache: "no-store",
-				})
-				if (!response.ok) {
-					continue
-				}
-				const data = (await response.json()) as {
+				const data = JSON.parse(text) as {
 					title?: string
 					name?: string
 					price?: number
@@ -209,7 +345,7 @@ export async function fetchProductFromLink(url: string): Promise<ProductFromLink
 	const trimmed = url.trim()
 	const fallback = { store: storeFromUrl(trimmed) }
 
-	if (!isSafeHttpUrl(trimmed)) {
+	if (!(await isSafeDestination(trimmed))) {
 		return fallback
 	}
 
