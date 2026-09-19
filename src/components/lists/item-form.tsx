@@ -12,6 +12,8 @@ import { formSchema } from "./formSchema"
 
 type ItemFormValues = z.infer<typeof formSchema>
 
+type NewItemFormChildren = ReactNode | ((state: { isFetching: boolean }) => ReactNode)
+
 export function NewItemForm({
 	form,
 	onSubmit,
@@ -27,13 +29,25 @@ export function NewItemForm({
 	className?: string
 	isOpen: boolean
 	showImageUrl?: boolean
-	children: ReactNode
+	children: NewItemFormChildren
 }) {
 	const { isFetching } = useAutofillFromLink(form, isOpen)
+	const actions = typeof children === "function" ? children({ isFetching }) : children
 
 	return (
 		<Form {...form}>
-			<form onSubmit={form.handleSubmit(onSubmit)} className={className} id={formId}>
+			<form
+				onSubmit={(event) => {
+					if (isFetching) {
+						event.preventDefault()
+						return
+					}
+					form.handleSubmit(onSubmit)(event)
+				}}
+				className={className}
+				id={formId}
+				aria-busy={isFetching}
+			>
 				<FormField
 					control={form.control}
 					name="link"
@@ -49,6 +63,7 @@ export function NewItemForm({
 									placeholder="https://loja.com.br/produto"
 									{...field}
 									value={field.value ?? ""}
+									disabled={isFetching}
 								/>
 							</FormControl>
 							<FormMessage />
@@ -62,7 +77,7 @@ export function NewItemForm({
 						<FormItem>
 							<FormLabel>Item</FormLabel>
 							<FormControl>
-								<Input placeholder="Nome do item" {...field} />
+								<Input placeholder="Nome do item" {...field} disabled={isFetching} />
 							</FormControl>
 							<FormMessage />
 						</FormItem>
@@ -75,7 +90,7 @@ export function NewItemForm({
 						<FormItem>
 							<FormLabel>Loja</FormLabel>
 							<FormControl>
-								<Input type="text" placeholder="Nome da loja" {...field} value={field.value ?? ""} />
+								<Input type="text" placeholder="Nome da loja" {...field} value={field.value ?? ""} disabled={isFetching} />
 							</FormControl>
 							<FormMessage />
 						</FormItem>
@@ -89,7 +104,7 @@ export function NewItemForm({
 							<FormItem>
 								<FormLabel>Imagem</FormLabel>
 								<FormControl>
-									<Input type="url" placeholder="https://site.com.br/image.jpg" {...field} value={field.value ?? ""} />
+									<Input type="url" placeholder="https://site.com.br/image.jpg" {...field} value={field.value ?? ""} disabled={isFetching} />
 								</FormControl>
 								<FormMessage />
 							</FormItem>
@@ -108,6 +123,7 @@ export function NewItemForm({
 										type="text"
 										placeholder="R$ 0,00"
 										{...field}
+										disabled={isFetching}
 										onChange={(e) => {
 											field.onChange(useFormatNumber(e.target.value))
 										}}
@@ -124,14 +140,14 @@ export function NewItemForm({
 							<FormItem>
 								<FormLabel>Quantidade</FormLabel>
 								<FormControl>
-									<Input type="number" min={1} {...field} />
+									<Input type="number" min={1} {...field} disabled={isFetching} />
 								</FormControl>
 								<FormMessage />
 							</FormItem>
 						)}
 					/>
 				</div>
-				{children}
+				{actions}
 			</form>
 		</Form>
 	)

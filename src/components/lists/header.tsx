@@ -95,11 +95,13 @@ export default function Header({ data }: { data?: Awaited<ReturnType<typeof getL
                                 className="space-y-4 p-4"
                                 isOpen={isOpen}
                             >
-                                <DrawerFooter>
-                                    <Button type="submit" disabled={isSaving} form="create-item-form">
-                                        {isSaving ? <Loader2Icon size={16} className="animate-spin" /> : "Adicionar"}
-                                    </Button>
-                                </DrawerFooter>
+                                {({ isFetching }) => (
+                                    <DrawerFooter>
+                                        <Button type="submit" disabled={isSaving || isFetching} form="create-item-form">
+                                            {isSaving ? <Loader2Icon size={16} className="animate-spin" /> : "Adicionar"}
+                                        </Button>
+                                    </DrawerFooter>
+                                )}
                             </NewItemForm>
                         </DrawerContent>
                     </Drawer>
@@ -119,11 +121,13 @@ export default function Header({ data }: { data?: Awaited<ReturnType<typeof getL
                                 className="space-y-4"
                                 isOpen={isOpen}
                             >
-                                <DialogFooter>
-                                    <Button type="submit" disabled={isSaving} form="create-item-form">
-                                        {isSaving ? <Loader2Icon size={16} className="animate-spin" /> : "Adicionar"}
-                                    </Button>
-                                </DialogFooter>
+                                {({ isFetching }) => (
+                                    <DialogFooter>
+                                        <Button type="submit" disabled={isSaving || isFetching} form="create-item-form">
+                                            {isSaving ? <Loader2Icon size={16} className="animate-spin" /> : "Adicionar"}
+                                        </Button>
+                                    </DialogFooter>
+                                )}
                             </NewItemForm>
                         </DialogContent>
                     </Dialog>
