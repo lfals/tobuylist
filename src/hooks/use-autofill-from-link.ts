@@ -23,12 +23,14 @@ export function useAutofillFromLink(form: UseFormReturn<ItemFormValues>, isOpen:
 
 		const trimmed = link?.trim() ?? ""
 		if (!trimmed) {
+			setIsFetching(false)
 			return
 		}
 
 		try {
 			new URL(trimmed)
 		} catch {
+			setIsFetching(false)
 			return
 		}
 
@@ -38,8 +40,8 @@ export function useAutofillFromLink(form: UseFormReturn<ItemFormValues>, isOpen:
 		}
 
 		const currentRequest = ++requestId.current
+		setIsFetching(true)
 		const timeout = setTimeout(async () => {
-			setIsFetching(true)
 			try {
 				const product = await fetchProductFromLink(trimmed)
 				if (currentRequest !== requestId.current) {
