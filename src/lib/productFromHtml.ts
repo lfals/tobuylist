@@ -8,17 +8,18 @@ export type ProductFromLink = {
 }
 
 function getMeta(html: string, key: string) {
-	const propertyFirst = html.match(
-		new RegExp(`<meta[^>]*(?:property|name)=["']${key}["'][^>]*content=["']([^"']*)["']`, "i"),
-	)
-	if (propertyFirst?.[1]) {
-		return decodeHtml(propertyFirst[1])
+	const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+	const name = `\\s(?:property|name)\\s*=\\s*(?:["']${escaped}["']|${escaped}(?=[\\s/>]))`
+	const content = `content\\s*=\\s*(?:["']([^"']*)["']|([^\\s>]+))`
+	const propertyFirst = html.match(new RegExp(`<meta\\b[^>]*${name}[^>]*\\s${content}`, "i"))
+	const fromProperty = propertyFirst?.[1] ?? propertyFirst?.[2]
+	if (fromProperty) {
+		return decodeHtml(fromProperty)
 	}
 
-	const contentFirst = html.match(
-		new RegExp(`<meta[^>]*content=["']([^"']*)["'][^>]*(?:property|name)=["']${key}["']`, "i"),
-	)
-	return contentFirst?.[1] ? decodeHtml(contentFirst[1]) : undefined
+	const contentFirst = html.match(new RegExp(`<meta\\b[^>]*\\s${content}[^>]*${name}`, "i"))
+	const fromContent = contentFirst?.[1] ?? contentFirst?.[2]
+	return fromContent ? decodeHtml(fromContent) : undefined
 }
 
 function decodeHtml(value: string) {
