@@ -1,6 +1,6 @@
 "use server"
 
-import { formatBRL, isBlockedProductHtml, parseProductHtml, type ProductFromLink } from "@/lib/productFromHtml"
+import { formatBRL, isBlockedProductHtml, parseMoney, parseProductHtml, type ProductFromLink } from "@/lib/productFromHtml"
 import { storeFromUrl } from "@/lib/storeFromUrl"
 
 const FETCH_TIMEOUT_MS = 12_000
@@ -75,7 +75,90 @@ async function fetchHtml(url: string) {
 	}
 }
 
+function isMercadoLivreUrl(url: string) {
+	try {
+		return /mercado(livre|libre)\./i.test(new URL(url).hostname)
+	} catch {
+		return false
+	}
+}
+
+function shopifyHandlePath(url: string) {
+	try {
+		return new URL(url).pathname.match(/\/products\/[^/]+/)?.[0] ?? null
+	} catch {
+		return null
+	}
+}
+
+async function fetchJson(url: string) {
+	const controller = new AbortController()
+	const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
+	try {
+		const response = await fetch(url, {
+			headers: { ...BROWSER_HEADERS, Accept: "application/json,text/javascript,*/*" },
+			redirect: "follow",
+			cache: "no-store",
+			signal: controller.signal,
+		})
+		if (!response.ok) {
+			return null
+		}
+		return await response.json()
+	} catch {
+		return null
+	} finally {
+		clearTimeout(timeout)
+	}
+}
+
+async function fetchShopifyProduct(url: string): Promise<ProductFromLink | null> {
+	const path = shopifyHandlePath(url)
+	if (!path) {
+		return null
+	}
+
+	const parsedUrl = new URL(url)
+	const data = (await fetchJson(`${parsedUrl.origin}${path}.json`)) as { product?: Record<string, unknown> } | null
+	const product = data?.product
+	if (!product) {
+		return null
+	}
+
+	const variants = Array.isArray(product.variants) ? (product.variants as Record<string, unknown>[]) : []
+	const variantId = parsedUrl.searchParams.get("variant")
+	const variant =
+		(variantId ? variants.find((item) => String(item.id) === variantId) : undefined) ?? variants[0] ?? {}
+	const current = parseMoney(variant.price ?? product.price)
+	const original = parseMoney(variant.compare_at_price ?? product.compare_at_price)
+	const listPrice = original && current ? Math.max(original, current) : original || current
+	const image =
+		(typeof product.featured_image === "string" && product.featured_image) ||
+		(product.image && typeof product.image === "object" && "src" in product.image
+			? String((product.image as { src: string }).src)
+			: undefined) ||
+		(Array.isArray(product.images) && product.images[0] && typeof product.images[0] === "object"
+			? String((product.images[0] as { src?: string }).src ?? "")
+			: undefined)
+
+	const name = typeof product.title === "string" ? product.title : undefined
+	if (!name && listPrice == null) {
+		return null
+	}
+
+	return {
+		...(name ? { name } : {}),
+		store: storeFromUrl(url),
+		...(listPrice != null ? { price: formatBRL(listPrice) } : {}),
+		...(image ? { imageUrl: image.startsWith("//") ? `https:${image}` : image } : {}),
+	}
+}
+
 async function fetchMercadoLivreApi(url: string): Promise<ProductFromLink | null> {
+	if (!isMercadoLivreUrl(url)) {
+		return null
+	}
+
 	const { itemId, productId } = extractMercadoLivreIds(url)
 	const ids = [itemId, productId].filter(Boolean) as string[]
 
@@ -130,9 +213,22 @@ export async function fetchProductFromLink(url: string): Promise<ProductFromLink
 		return fallback
 	}
 
+	let result: ProductFromLink = { ...fallback }
+
+	const fromShopify = await fetchShopifyProduct(trimmed)
+	if (fromShopify) {
+		result = { ...result, ...fromShopify }
+	}
+	if (result.name && result.price) {
+		return result
+	}
+
 	const fromApi = await fetchMercadoLivreApi(trimmed)
-	if (fromApi?.name || fromApi?.price) {
-		return { ...fallback, ...fromApi }
+	if (fromApi) {
+		result = { ...result, ...fromApi }
+	}
+	if (result.name && result.price) {
+		return result
 	}
 
 	const html = (await fetchHtml(trimmed)) || ""
@@ -140,11 +236,11 @@ export async function fetchProductFromLink(url: string): Promise<ProductFromLink
 		html && !isBlockedProductHtml(html) ? html : (await fetchHtml(translateProxyUrl(trimmed))) || html
 
 	if (!usableHtml) {
-		return fallback
+		return result
 	}
 
 	return {
-		...fallback,
 		...parseProductHtml(usableHtml, trimmed),
+		...result,
 	}
 }
