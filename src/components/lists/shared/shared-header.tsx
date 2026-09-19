@@ -37,13 +37,16 @@ export default function SharedHeader({ data }: { data: any }) {
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsSaving(true)
-        await createListItem(params.list as string, {
-            ...values,
-            quantity: Number(values.quantity),
-            listId: params.list as string
-        })
-        setIsSaving(false)
-        setIsOpen(false)
+        try {
+            await createListItem(params.list as string, {
+                ...values,
+                quantity: Number(values.quantity),
+                listId: params.list as string
+            })
+            setIsOpen(false)
+        } finally {
+            setIsSaving(false)
+        }
     }
 
     useEffect(() => {
