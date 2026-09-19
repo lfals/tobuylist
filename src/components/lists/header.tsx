@@ -73,7 +73,7 @@ export default function Header({ data }: { data?: Awaited<ReturnType<typeof getL
                     {Boolean(isShared) !== true ? (
                         <>
                             <ShareList item={data} />
-                            <Button onClick={() => setIsOpen(true)}>Adicionar</Button>
+                            <Button type="button" onClick={() => setIsOpen(true)}>Adicionar</Button>
                             <EditList item={data} />
                         </>
                     ) : (

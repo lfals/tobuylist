@@ -61,7 +61,7 @@ export default function SharedHeader({ data }: { data: any }) {
                     <p className="text-sm text-gray-500">{data?.description}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    {Boolean(data?.public) && <Button onClick={() => setIsOpen(true)}>Adicionar</Button>}
+                    {Boolean(data?.public) && <Button type="button" onClick={() => setIsOpen(true)}>Adicionar</Button>}
                 </div>
             </div>
             {isMobile ? (
