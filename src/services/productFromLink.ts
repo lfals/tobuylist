@@ -61,6 +61,30 @@ function isPrivateIp(address: string) {
 	return true
 }
 
+const MERCADO_LIVRE_HOST = /mercado(livre|libre)\./i
+const HOST_SAFETY_CACHE_MAX = 200
+const hostSafetyCache = new Map<string, Promise<boolean>>()
+
+function getCachedHostSafety(host: string) {
+	const cached = hostSafetyCache.get(host)
+	if (!cached) {
+		return
+	}
+	hostSafetyCache.delete(host)
+	hostSafetyCache.set(host, cached)
+	return cached
+}
+
+function setCachedHostSafety(host: string, pending: Promise<boolean>) {
+	if (hostSafetyCache.size >= HOST_SAFETY_CACHE_MAX && !hostSafetyCache.has(host)) {
+		const oldest = hostSafetyCache.keys().next().value
+		if (oldest) {
+			hostSafetyCache.delete(oldest)
+		}
+	}
+	hostSafetyCache.set(host, pending)
+}
+
 function isSafeHttpUrl(url: string) {
 	try {
 		const parsed = new URL(url)
@@ -85,12 +109,7 @@ function isSafeHttpUrl(url: string) {
 	}
 }
 
-async function isSafeDestination(url: string) {
-	if (!isSafeHttpUrl(url)) {
-		return false
-	}
-
-	const host = new URL(url).hostname
+async function lookupHostSafety(host: string) {
 	if (isIP(host)) {
 		return !isPrivateIp(host)
 	}
@@ -104,6 +123,22 @@ async function isSafeDestination(url: string) {
 	} catch {
 		return false
 	}
+}
+
+function isSafeDestination(url: string) {
+	if (!isSafeHttpUrl(url)) {
+		return Promise.resolve(false)
+	}
+
+	const host = new URL(url).hostname.toLowerCase()
+	const cached = getCachedHostSafety(host)
+	if (cached) {
+		return cached
+	}
+
+	const pending = lookupHostSafety(host)
+	setCachedHostSafety(host, pending)
+	return pending
 }
 
 function translateProxyUrl(url: string) {
@@ -213,7 +248,7 @@ async function fetchHtml(url: string) {
 
 function isMercadoLivreUrl(url: string) {
 	try {
-		return /mercado(livre|libre)\./i.test(new URL(url).hostname)
+		return MERCADO_LIVRE_HOST.test(new URL(url).hostname)
 	} catch {
 		return false
 	}
@@ -345,26 +380,36 @@ export async function fetchProductFromLink(url: string): Promise<ProductFromLink
 	const trimmed = url.trim()
 	const fallback = { store: storeFromUrl(trimmed) }
 
+	if (!isSafeHttpUrl(trimmed)) {
+		return fallback
+	}
+
 	if (!(await isSafeDestination(trimmed))) {
 		return fallback
 	}
 
 	let result: ProductFromLink = { ...fallback }
+	const hasShopifyPath = Boolean(shopifyHandlePath(trimmed))
+	const isMercadoLivre = isMercadoLivreUrl(trimmed)
 
-	const fromShopify = await fetchShopifyProduct(trimmed)
-	if (fromShopify) {
-		result = { ...result, ...fromShopify }
-	}
-	if (result.name && result.price) {
-		return result
+	if (hasShopifyPath) {
+		const fromShopify = await fetchShopifyProduct(trimmed)
+		if (fromShopify) {
+			result = { ...result, ...fromShopify }
+		}
+		if (result.name && result.price) {
+			return result
+		}
 	}
 
-	const fromApi = await fetchMercadoLivreApi(trimmed)
-	if (fromApi) {
-		result = { ...result, ...fromApi }
-	}
-	if (result.name && result.price) {
-		return result
+	if (isMercadoLivre) {
+		const fromApi = await fetchMercadoLivreApi(trimmed)
+		if (fromApi) {
+			result = { ...result, ...fromApi }
+		}
+		if (result.name && result.price) {
+			return result
+		}
 	}
 
 	const html = (await fetchHtml(trimmed)) || ""

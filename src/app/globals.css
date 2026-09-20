@@ -6,6 +6,16 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+.cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 88px;
+}
+
+.cv-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 192px;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

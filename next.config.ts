@@ -7,8 +7,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "**",
       },
-
     ],
+  },
+  experimental: {
+    optimizePackageImports: ["lucide-react", "framer-motion"],
   },
 };
 

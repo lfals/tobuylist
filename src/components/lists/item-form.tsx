@@ -3,7 +3,7 @@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { useAutofillFromLink } from "@/hooks/use-autofill-from-link"
-import { useFormatNumber } from "@/hooks/use-formatNumber"
+import { formatNumber } from "@/lib/format-number"
 import { Loader2Icon } from "lucide-react"
 import type { ReactNode } from "react"
 import type { UseFormReturn } from "react-hook-form"
@@ -55,7 +55,7 @@ export function NewItemForm({
 						<FormItem>
 							<FormLabel className="flex items-center gap-2">
 								Link
-								{isFetching && <Loader2Icon size={14} className="animate-spin" />}
+								{isFetching ? <Loader2Icon size={14} className="animate-spin" /> : null}
 							</FormLabel>
 							<FormControl>
 								<Input
@@ -96,7 +96,7 @@ export function NewItemForm({
 						</FormItem>
 					)}
 				/>
-				{showImageUrl && (
+				{showImageUrl ? (
 					<FormField
 						control={form.control}
 						name="imageUrl"
@@ -110,7 +110,7 @@ export function NewItemForm({
 							</FormItem>
 						)}
 					/>
-				)}
+				) : null}
 				<div className="flex gap-2">
 					<FormField
 						control={form.control}
@@ -125,7 +125,7 @@ export function NewItemForm({
 										{...field}
 										disabled={isFetching}
 										onChange={(e) => {
-											field.onChange(useFormatNumber(e.target.value))
+											field.onChange(formatNumber(e.target.value))
 										}}
 									/>
 								</FormControl>
