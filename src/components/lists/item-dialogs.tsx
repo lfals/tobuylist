@@ -5,16 +5,15 @@ import { Button, buttonVariants } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { formatNumber } from "@/lib/format-number"
+import { formatInput } from "@/lib/money"
 import { deleteListItem, editListItem } from "@/services/listItem"
 import type { ListItemRecord } from "@/types/list"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Loader2Icon } from "lucide-react"
 import { useTransition } from "react"
 import { useForm } from "react-hook-form"
-import type { z } from "zod"
 import { formSchema } from "./formSchema"
-import { NewItemForm } from "./item-form"
+import { ItemForm, type ItemFormInput, type ItemFormValues } from "./item-form"
 
 type EditItemDialogProps = {
 	item: ListItemRecord | null
@@ -24,13 +23,13 @@ type EditItemDialogProps = {
 	onOpenChange: (open: boolean) => void
 }
 
-function itemToFormValues(item: ListItemRecord): z.infer<typeof formSchema> {
+function itemToFormValues(item: ListItemRecord): ItemFormInput {
 	return {
 		name: item.name,
 		link: item.link ?? "",
 		imageUrl: item.imageUrl || "",
 		store: item.store ?? "",
-		price: formatNumber(item.price.toString()),
+		price: formatInput(item.price),
 		quantity: item.quantity.toString(),
 	}
 }
@@ -51,17 +50,16 @@ function EditItemForm({
 	onOpenChange: (open: boolean) => void
 }) {
 	const [isSaving, startSaving] = useTransition()
-	const form = useForm<z.infer<typeof formSchema>>({
+	const form = useForm<ItemFormInput, unknown, ItemFormValues>({
 		resolver: zodResolver(formSchema),
 		defaultValues: itemToFormValues(item),
 	})
 
-	function onSubmit(values: z.infer<typeof formSchema>) {
+	function onSubmit(values: ItemFormValues) {
 		startSaving(async () => {
 			await editListItem(listId, {
 				...values,
 				id: item.id,
-				quantity: Number(values.quantity),
 				listId,
 			})
 			onOpenChange(false)
@@ -71,7 +69,7 @@ function EditItemForm({
 	const formId = "edit-item-form"
 
 	return (
-		<NewItemForm
+		<ItemForm
 			form={form}
 			onSubmit={onSubmit}
 			formId={formId}
@@ -94,7 +92,7 @@ function EditItemForm({
 					</DialogFooter>
 				)
 			}
-		</NewItemForm>
+		</ItemForm>
 	)
 }
 

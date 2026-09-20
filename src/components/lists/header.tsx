@@ -4,41 +4,42 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { formatNumber } from "@/lib/format-number"
+import type { ListCapabilities } from "@/lib/listAccess"
+import { formatDisplay } from "@/lib/money"
 import { createListItem } from "@/services/listItem"
 import type { ListSummary } from "@/types/list"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Loader2Icon } from "lucide-react"
 import { useState, useTransition } from "react"
 import { useForm } from "react-hook-form"
-import type { z } from "zod"
 import EditList from "./editList"
 import { emptyItemFormValues, formSchema } from "./formSchema"
-import { NewItemForm } from "./item-form"
+import { ItemForm, type ItemFormInput, type ItemFormValues } from "./item-form"
 import { SaveList } from "./saveList"
 import { ShareList } from "./shareList"
 
 export default function Header({
 	list,
-	isShared,
+	capabilities,
+	showImageUrl = true,
 }: {
 	list: ListSummary
-	isShared: boolean
+	capabilities: ListCapabilities
+	showImageUrl?: boolean
 }) {
 	const [isOpen, setIsOpen] = useState(false)
 	const [isSaving, startSaving] = useTransition()
 	const isMobile = useIsMobile()
 
-	const form = useForm<z.infer<typeof formSchema>>({
+	const form = useForm<ItemFormInput, unknown, ItemFormValues>({
 		resolver: zodResolver(formSchema),
 		defaultValues: emptyItemFormValues,
 	})
 
-	function onSubmit(values: z.infer<typeof formSchema>) {
+	function onSubmit(values: ItemFormValues) {
 		startSaving(async () => {
 			await createListItem(list.id, {
 				...values,
-				quantity: Number(values.quantity),
 				listId: list.id,
 			})
 			setIsOpen(false)
@@ -57,20 +58,15 @@ export default function Header({
 		<>
 			<div className="flex items-center justify-between">
 				<div>
-					<h1 className="text-2xl font-bold">{formatNumber(list.totalValue.toString())}</h1>
+					<h1 className="text-2xl font-bold">{formatDisplay(list.totalValue)}</h1>
 					<h2 className="text-4xl font-bold">{list.name}</h2>
 					<p className="text-sm text-gray-500">{list.description}</p>
 				</div>
 				<div className="flex items-center gap-2">
-					{isShared ? (
-						<SaveList isPublic={Boolean(list.public)} listId={list.id} />
-					) : (
-						<>
-							<ShareList item={list} />
-							<Button type="button" onClick={() => setIsOpen(true)}>Adicionar</Button>
-							<EditList item={list} />
-						</>
-					)}
+					{capabilities.canShare && <ShareList item={list} />}
+					{capabilities.canAddItem && <Button type="button" onClick={() => setIsOpen(true)}>Adicionar</Button>}
+					{capabilities.canEditList && <EditList item={list} />}
+					{capabilities.canSave && <SaveList listId={list.id} promptToSave={Boolean(list.public)} />}
 				</div>
 			</div>
 			{isMobile ? (
@@ -79,12 +75,13 @@ export default function Header({
 						<DrawerHeader>
 							<DrawerTitle>Novo item</DrawerTitle>
 						</DrawerHeader>
-						<NewItemForm
+						<ItemForm
 							form={form}
 							onSubmit={onSubmit}
 							formId="create-item-form"
 							className="space-y-4 p-4"
 							isOpen={isOpen}
+							showImageUrl={showImageUrl}
 						>
 							{({ isFetching }) => (
 								<DrawerFooter>
@@ -93,7 +90,7 @@ export default function Header({
 									</Button>
 								</DrawerFooter>
 							)}
-						</NewItemForm>
+						</ItemForm>
 					</DrawerContent>
 				</Drawer>
 			) : (
@@ -102,12 +99,13 @@ export default function Header({
 						<DialogHeader>
 							<DialogTitle>Novo item</DialogTitle>
 						</DialogHeader>
-						<NewItemForm
+						<ItemForm
 							form={form}
 							onSubmit={onSubmit}
 							formId="create-item-form"
 							className="space-y-4"
 							isOpen={isOpen}
+							showImageUrl={showImageUrl}
 						>
 							{({ isFetching }) => (
 								<DialogFooter>
@@ -116,7 +114,7 @@ export default function Header({
 									</Button>
 								</DialogFooter>
 							)}
-						</NewItemForm>
+						</ItemForm>
 					</DialogContent>
 				</Dialog>
 			)}

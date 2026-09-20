@@ -1,6 +1,8 @@
 "use client"
 
-import { deleteListItem, editListItem, getItemImage, markListItem, reorderListItem } from "@/services/listItem"
+import type { ListCapabilities } from "@/lib/listAccess"
+import { editListItem, markListItem, reorderListItem } from "@/services/listItem"
+import { resolveItemImage } from "@/services/itemImage"
 import type { ListItemRecord } from "@/types/list"
 import dynamic from "next/dynamic"
 import { useCallback, useEffect, useRef, useState, useTransition } from "react"
@@ -18,12 +20,12 @@ function orderSignature(items: ListItemRecord[]) {
 export default function Items({
 	items: initialItems,
 	listId,
-	canEdit,
+	capabilities,
 	showImage = true,
 }: {
 	items: ListItemRecord[]
 	listId: string
-	canEdit: boolean
+	capabilities: ListCapabilities
 	showImage?: boolean
 }) {
 	const [items, setItems] = useState(initialItems)
@@ -32,6 +34,8 @@ export default function Items({
 	const lastSavedOrder = useRef(orderSignature(initialItems))
 	const persistTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
 	const [, startMarking] = useTransition()
+	const canReorder = capabilities.canReorder
+	const canEditItem = capabilities.canEditItem
 
 	useEffect(() => {
 		setItems(initialItems)
@@ -46,10 +50,9 @@ export default function Items({
 
 	const handleImageError = useCallback((current: ListItemRecord) => {
 		void (async () => {
-			const imageUrl = await getItemImage(current.name, true)
+			const imageUrl = await resolveItemImage(current.name, { page: "next" })
 			await editListItem(listId, {
 				...current,
-				price: String(current.price),
 				imageUrl,
 			})
 		})()
@@ -57,7 +60,7 @@ export default function Items({
 
 	function handleReorder(nextItems: ListItemRecord[]) {
 		setItems(nextItems)
-		if (!canEdit) {
+		if (!canReorder) {
 			return
 		}
 
@@ -73,7 +76,7 @@ export default function Items({
 	}
 
 	const rowProps = {
-		canEdit,
+		canEdit: canEditItem,
 		showImage,
 		onEdit: setEditingItem,
 		onDelete: setDeletingItem,
@@ -83,7 +86,7 @@ export default function Items({
 
 	return (
 		<>
-			{canEdit ? (
+			{canReorder ? (
 				<ReorderableItemList items={items} onReorder={handleReorder} {...rowProps} />
 			) : (
 				<div className="flex flex-col gap-4">
@@ -92,7 +95,7 @@ export default function Items({
 					))}
 				</div>
 			)}
-			{canEdit ? (
+			{canEditItem ? (
 				<>
 					<EditItemDialog
 						item={editingItem}

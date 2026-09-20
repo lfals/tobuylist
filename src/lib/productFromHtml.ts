@@ -1,9 +1,11 @@
+import { centsFromScraped, type Cents } from "./money"
+import { isUsableItemImage } from "./itemImage"
 import { storeFromUrl } from "./storeFromUrl"
 
 export type ProductFromLink = {
 	name?: string
 	store?: string
-	price?: string
+	price?: Cents
 	imageUrl?: string
 }
 
@@ -30,58 +32,6 @@ function decodeHtml(value: string) {
 		.replace(/&lt;/g, "<")
 		.replace(/&gt;/g, ">")
 		.trim()
-}
-
-export function parseMoney(value: unknown): number | undefined {
-	if (typeof value === "number" && Number.isFinite(value)) {
-		return value
-	}
-	if (typeof value !== "string") {
-		return undefined
-	}
-
-	const raw = value.trim()
-	if (!raw || raw === "null") {
-		return undefined
-	}
-
-	const compact = raw.replace(/[^\d,.-]/g, "")
-	if (!compact || compact === "-" || compact === "." || compact === ",") {
-		return undefined
-	}
-
-	const hasComma = compact.includes(",")
-	const hasDot = compact.includes(".")
-	let normalized = compact
-
-	if (hasComma && hasDot) {
-		if (compact.lastIndexOf(",") > compact.lastIndexOf(".")) {
-			normalized = compact.replace(/\./g, "").replace(",", ".")
-		} else {
-			normalized = compact.replace(/,/g, "")
-		}
-	} else if (hasComma) {
-		const fraction = compact.split(",")[1] ?? ""
-		normalized = fraction.length === 2 || fraction.length === 1 ? compact.replace(",", ".") : compact.replace(/,/g, "")
-	} else if (hasDot) {
-		const fraction = compact.split(".")[1] ?? ""
-		if (fraction.length === 3 && compact.split(".").length <= 3) {
-			normalized = compact.replace(/\./g, "")
-		}
-	}
-
-	const parsed = Number(normalized)
-	if (!Number.isFinite(parsed) || parsed <= 0) {
-		return undefined
-	}
-	return parsed
-}
-
-export function formatBRL(value: number) {
-	return new Intl.NumberFormat("pt-BR", {
-		style: "currency",
-		currency: "BRL",
-	}).format(value)
 }
 
 function cleanProductName(name: string) {
@@ -171,16 +121,16 @@ function offerFromRecord(record: Record<string, unknown>): OfferPrices {
 	const spec = record.priceSpecification
 	const fromSpec = spec && typeof spec === "object" && spec !== record ? offerFromUnknown(spec) : {}
 	const price =
-		parseMoney(record.price) ??
-		parseMoney(record.lowPrice) ??
-		parseMoney(record.priceAmount) ??
+		centsFromScraped(record.price) ??
+		centsFromScraped(record.lowPrice) ??
+		centsFromScraped(record.priceAmount) ??
 		fromSpec.price
 	const originalPrice =
-		parseMoney(record.original_price) ??
-		parseMoney(record.originalPrice) ??
-		parseMoney(record.listPrice) ??
-		parseMoney(record.compareAtPrice) ??
-		parseMoney(record.compare_at_price) ??
+		centsFromScraped(record.original_price) ??
+		centsFromScraped(record.originalPrice) ??
+		centsFromScraped(record.listPrice) ??
+		centsFromScraped(record.compareAtPrice) ??
+		centsFromScraped(record.compare_at_price) ??
 		fromSpec.originalPrice
 
 	if (price == null && originalPrice == null) {
@@ -268,18 +218,18 @@ function originalPriceFromHtml(html: string) {
 function microdataPrice(html: string) {
 	const contentFirst = html.match(/itemprop=["']price["'][^>]*content=["']([^"']+)["']/i)
 	if (contentFirst?.[1]) {
-		return parseMoney(contentFirst[1])
+		return centsFromScraped(contentFirst[1])
 	}
 	const propertyFirst = html.match(/content=["']([^"']+)["'][^>]*itemprop=["']price["']/i)
 	if (propertyFirst?.[1]) {
-		return parseMoney(propertyFirst[1])
+		return centsFromScraped(propertyFirst[1])
 	}
 	return undefined
 }
 
 function quotedDecimalPrice(html: string) {
 	const match = html.match(/"(?:price|lowPrice|priceAmount)"\s*:\s*"([0-9]+[.,][0-9]{2})"/)
-	return match?.[1] ? parseMoney(match[1]) : undefined
+	return match?.[1] ? centsFromScraped(match[1]) : undefined
 }
 
 function pickListPrice(current?: number, original?: number) {
@@ -306,8 +256,8 @@ export function absoluteAssetUrl(url: string, sourceUrl: string) {
 
 export function parseProductHtml(html: string, sourceUrl: string): ProductFromLink {
 	const jsonLd = productFromJsonLd(html)
-	const ogPrice = parseMoney(getMeta(html, "og:price:amount") || getMeta(html, "product:price:amount"))
-	const originalPrice = originalPriceFromHtml(html) ?? jsonLd.originalPrice
+	const ogPrice = centsFromScraped(getMeta(html, "og:price:amount") || getMeta(html, "product:price:amount"))
+	const originalPrice = centsFromScraped(originalPriceFromHtml(html)) ?? jsonLd.originalPrice
 	const currentPrice = jsonLd.price ?? ogPrice ?? microdataPrice(html) ?? quotedDecimalPrice(html)
 	const priceValue = pickListPrice(currentPrice, originalPrice)
 
@@ -320,11 +270,12 @@ export function parseProductHtml(html: string, sourceUrl: string): ProductFromLi
 	const name = rawName ? cleanProductName(decodeHtml(rawName)) : undefined
 	const imageUrl = jsonLd.imageUrl || getMeta(html, "og:image") || getMeta(html, "twitter:image")
 	const store = storeFromUrl(sourceUrl)
+	const resolvedImage = imageUrl ? absoluteAssetUrl(imageUrl, sourceUrl) : undefined
 
 	return {
 		...(name ? { name } : {}),
 		...(store ? { store } : {}),
-		...(priceValue != null ? { price: formatBRL(priceValue) } : {}),
-		...(imageUrl ? { imageUrl: absoluteAssetUrl(imageUrl, sourceUrl) } : {}),
+		...(priceValue != null ? { price: priceValue } : {}),
+		...(resolvedImage && isUsableItemImage(resolvedImage) ? { imageUrl: resolvedImage } : {}),
 	}
 }

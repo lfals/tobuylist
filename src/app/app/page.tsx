@@ -4,10 +4,10 @@ import {
 	CardContent,
 	CardDescription,
 	CardHeader,
-} from "@/components/ui/card";
-import { formatViewNumber } from "@/lib/format-number";
-import { getListDashboard } from "@/services/lists-queries";
-import Link from "next/link";
+} from "@/components/ui/card"
+import { formatDisplay } from "@/lib/money"
+import { getListDashboard } from "@/services/listLoad"
+import Link from "next/link"
 
 export default async function Dashboard() {
 	const listsCards = await getListDashboard()
@@ -16,7 +16,7 @@ export default async function Dashboard() {
 			<div className="flex items-center gap-8">
 				<div className="min-w-32">
 					<h1>Total</h1>
-					<p className="text-2xl font-bold">{formatViewNumber(listsCards.totalValue.toString())}</p>
+					<p className="text-2xl font-bold">{formatDisplay(listsCards.totalValue)}</p>
 				</div>
 				<div>
 					<h1>Listas</h1>
@@ -43,7 +43,7 @@ export default async function Dashboard() {
 									</div>
 									<div>
 										<h1>Total</h1>
-										<p>{formatViewNumber(listCard.totalValue.toString())}</p>
+										<p>{formatDisplay(listCard.totalValue)}</p>
 									</div>
 								</div>
 							</CardContent>
@@ -52,5 +52,5 @@ export default async function Dashboard() {
 				)) : <p>Sem listas</p>}
 			</div>
 		</div>
-	);
+	)
 }

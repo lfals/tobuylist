@@ -7,7 +7,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { formatViewNumber } from "@/lib/format-number"
+import { formatDisplay } from "@/lib/money"
 import { cn } from "@/lib/utils"
 import type { ListItemRecord } from "@/types/list"
 import { GripIcon, ImageOffIcon, MoreHorizontalIcon } from "lucide-react"
@@ -82,7 +82,7 @@ export function ItemCardBody({
 					</a>
 				</div>
 				<h1>
-					{formatViewNumber(item.price.toString())} (x{item.quantity})
+					{formatDisplay(item.price)} (x{item.quantity})
 				</h1>
 			</div>
 			{canEdit ? (

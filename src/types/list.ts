@@ -13,6 +13,7 @@ export type ListSummary = {
 	name: string
 	description: string | null
 	public: number
+	userId: string
 	totalValue: number
 }
 

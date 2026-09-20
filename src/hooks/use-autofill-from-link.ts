@@ -1,16 +1,12 @@
 "use client"
 
-import { storeFromUrl } from "@/lib/storeFromUrl"
+import type { ItemFormInput, ItemFormValues } from "@/components/lists/item-form"
+import { formatInput } from "@/lib/money"
 import { fetchProductFromLink } from "@/services/productFromLink"
-import { formatNumber } from "@/lib/format-number"
 import { useEffect, useRef, useState } from "react"
 import type { UseFormReturn } from "react-hook-form"
-import type { z } from "zod"
-import type { formSchema } from "@/components/lists/formSchema"
 
-type ItemFormValues = z.infer<typeof formSchema>
-
-export function useAutofillFromLink(form: UseFormReturn<ItemFormValues>, isOpen: boolean) {
+export function useAutofillFromLink(form: UseFormReturn<ItemFormInput, unknown, ItemFormValues>, isOpen: boolean) {
 	const link = form.watch("link")
 	const [isFetching, setIsFetching] = useState(false)
 	const requestId = useRef(0)
@@ -31,18 +27,13 @@ export function useAutofillFromLink(form: UseFormReturn<ItemFormValues>, isOpen:
 
 		try {
 			const parsed = new URL(trimmed)
-			if (!["http:", "https:"].includes(parsed.protocol) || !parsed.hostname.includes(".")) {
+			if (!["http:", "https:"].includes(parsed.protocol)) {
 				setIsFetching(false)
 				return
 			}
 		} catch {
 			setIsFetching(false)
 			return
-		}
-
-		const store = storeFromUrl(trimmed)
-		if (store) {
-			form.setValue("store", store)
 		}
 
 		setIsFetching(true)
@@ -58,8 +49,8 @@ export function useAutofillFromLink(form: UseFormReturn<ItemFormValues>, isOpen:
 				if (product.store) {
 					form.setValue("store", product.store, { shouldValidate: true })
 				}
-				if (product.price) {
-					form.setValue("price", formatNumber(product.price), { shouldValidate: true })
+				if (product.price != null) {
+					form.setValue("price", formatInput(product.price), { shouldValidate: true })
 				}
 				if (product.imageUrl) {
 					form.setValue("imageUrl", product.imageUrl, { shouldValidate: true })
