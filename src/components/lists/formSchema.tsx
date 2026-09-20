@@ -1,3 +1,4 @@
+import { centsFromInput } from "@/lib/money"
 import { z } from "zod"
 
 export const formSchema = z.object({
@@ -7,13 +8,9 @@ export const formSchema = z.object({
     link: z.union([z.literal(""), z.string().trim().url()]),
     store: z.string(),
     imageUrl: z.string(),
-    price: z.string().transform((val) => {
-        return String(val).replace(/\D/g, "")
-    }),
-    quantity: z.string().refine((val) => {
-        return Number(val) > 0
-    }, {
+    price: z.string().transform((val) => centsFromInput(val)),
+    quantity: z.coerce.number().int().min(1, {
         message: "Quantidade deve ser maior que 0.",
-    })
+    }),
 })
 

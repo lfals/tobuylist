@@ -2,8 +2,9 @@
 
 import db from "@/db/drizzle";
 import { listItemsTable, listsTable, sharedListsTable } from "@/db/schema";
+import { listCapabilities, type ListRoute } from "@/lib/listAccess";
 import { currentUser } from "@clerk/nextjs/server";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { randomUUID } from 'node:crypto'
@@ -42,47 +43,99 @@ export async function getAll() {
     return lists;
 }
 
-export const getListDetails = async (listId: string) => {
-    const user = await currentUser()
-
-    const list = await db.select().from(listsTable).where(and(eq(listsTable.id, listId), eq(listsTable.userId, user?.id!)))
-    if (!list.length) {
-        redirect('/app')
-    }
-    const listItems = await db.select().from(listItemsTable).where(eq(listItemsTable.listId, list[0].id)).orderBy(listItemsTable.order, listItemsTable.isActive)
-    const listItemsTotal = await db.select().from(listItemsTable).where(and(eq(listItemsTable.listId, listId), eq(listItemsTable.isActive, 1)))
-    const totalValue = listItemsTotal.reduce((acc, item) => acc + item.price * item.quantity, 0)
-    return { ...list[0], items: listItems, totalValue }
+export type ListWithItems = typeof listsTable.$inferSelect & {
+    items: (typeof listItemsTable.$inferSelect)[]
+    totalValue: number
 }
 
+async function withItems(list: typeof listsTable.$inferSelect): Promise<ListWithItems> {
+    const items = await db.select().from(listItemsTable).where(eq(listItemsTable.listId, list.id)).orderBy(listItemsTable.order, listItemsTable.isActive)
+    const totalValue = items
+        .filter((item) => item.isActive === 1)
+        .reduce((acc, item) => acc + item.price * item.quantity, 0)
+    return { ...list, items, totalValue }
+}
+
+export async function loadList(listId: string, route: ListRoute): Promise<ListWithItems | null> {
+    const user = await currentUser()
+
+    if (route === "owner") {
+        const list = await db.select().from(listsTable).where(and(eq(listsTable.id, listId), eq(listsTable.userId, user?.id!)))
+        if (!list.length) {
+            return null
+        }
+        return withItems(list[0])
+    }
+
+    if (route === "share-link") {
+        const list = await db.select().from(listsTable).where(and(eq(listsTable.id, listId), eq(listsTable.shared, 1)))
+        if (!list.length) {
+            return null
+        }
+        return withItems(list[0])
+    }
+
+    const bookmark = await db.select().from(sharedListsTable).where(and(eq(sharedListsTable.listId, listId), eq(sharedListsTable.userId, user?.id!)))
+    if (!bookmark.length) {
+        return null
+    }
+    const list = await db.select().from(listsTable).where(eq(listsTable.id, bookmark[0].listId))
+    if (!list.length) {
+        return null
+    }
+    return withItems(list[0])
+}
+
+export async function loadListView(listId: string, route: ListRoute) {
+    const list = await loadList(listId, route)
+    if (!list) {
+        return null
+    }
+    const user = await currentUser()
+    return {
+        list,
+        capabilities: listCapabilities({
+            route,
+            isOwner: list.userId === user?.id,
+            isPublic: Boolean(list.public),
+        }),
+    }
+}
 
 export async function getListDashboard() {
     const user = await currentUser()
     const lists = await db.select().from(listsTable).where(and(eq(listsTable.userId, user?.id!), eq(listsTable.isActive, 1)))
-    const newList = {
+    const empty = {
         lists: [] as { list: typeof listsTable.$inferSelect, totalValue: number, items: number }[],
         totalValue: 0,
-        items: 0
+        items: 0,
     }
-    for (const list of lists) {
-        const listItems = await db.select({
-            value: listItemsTable.price,
-            quantity: listItemsTable.quantity
-        }).from(listItemsTable).where(eq(listItemsTable.listId, list.id))
-        const totalValue = listItems.reduce((acc, item) => acc + item.value * item.quantity, 0)
-        newList.lists.push({ list, totalValue, items: listItems.length })
-        newList.totalValue += totalValue
-        newList.items += listItems.length
+    if (!lists.length) {
+        return empty
     }
 
+    const listItems = await db.select({
+        listId: listItemsTable.listId,
+        value: listItemsTable.price,
+        quantity: listItemsTable.quantity,
+    }).from(listItemsTable).where(inArray(listItemsTable.listId, lists.map((list) => list.id)))
 
-
-    return newList
+    return lists.reduce((acc, list) => {
+        const rows = listItems.filter((item) => item.listId === list.id)
+        const totalValue = rows.reduce((sum, item) => sum + item.value * item.quantity, 0)
+        acc.lists.push({ list, totalValue, items: rows.length })
+        acc.totalValue += totalValue
+        acc.items += rows.length
+        return acc
+    }, empty)
 }
 
 
 export async function duplicateList(listId: string) {
-    const list = await getListDetails(listId)
+    const list = await loadList(listId, "owner")
+    if (!list) {
+        redirect("/app")
+    }
     const newList = await createList({ ...list, name: `${list.name} - Copia` })
 
     const newListItems = list.items.map(item => {
@@ -102,18 +155,6 @@ export async function shareList(listId: string, isPublic: boolean) {
     revalidatePath(`/app`)
 }
 
-export async function getSharedList(listId: string) {
-
-    const list = await db.select().from(listsTable).where(and(eq(listsTable.id, listId), eq(listsTable.shared, 1)))
-    if (!list.length) {
-        redirect('/app')
-    }
-    const listItems = await db.select().from(listItemsTable).where(and(eq(listItemsTable.listId, list[0].id))).orderBy(asc(listItemsTable.order))
-    const listItemsTotal = await db.select().from(listItemsTable).where(and(eq(listItemsTable.listId, listId), eq(listItemsTable.isActive, 1)))
-    const totalValue = listItemsTotal.reduce((acc, item) => acc + item.price * item.quantity, 0)
-    return { ...list[0], items: listItems, totalValue }
-
-}
 
 export async function saveList(listId: string) {
     const user = await currentUser()
@@ -128,12 +169,17 @@ export async function saveList(listId: string) {
 export async function getSharedLists() {
     const user = await currentUser()
     const sharedLists = await db.select().from(sharedListsTable).where(eq(sharedListsTable.userId, user?.id!))
-    const lists = await db.select().from(listsTable).where(inArray(listsTable.id, sharedLists.map(item => item.listId)))
-    return lists
+    if (!sharedLists.length) {
+        return []
+    }
+    return db.select().from(listsTable).where(inArray(listsTable.id, sharedLists.map(item => item.listId)))
 }
 
 export async function duplicateSharedList(listId: string) {
-    const list = await getSharedList(listId)
+    const list = await loadList(listId, "share-link")
+    if (!list) {
+        redirect("/app")
+    }
     const newList = await createList({ ...list, name: `${list.name} - Copia` })
 
     const newListItems = list.items.map(item => {
@@ -155,19 +201,3 @@ export async function deleteSharedList(listId: string) {
     revalidatePath(`/app/${listId}`)
 }
 
-export const getSharedListDetails = async (listId: string) => {
-    const user = await currentUser()
-
-    const sharedList = await db.select().from(sharedListsTable).where(and(eq(sharedListsTable.listId, listId), eq(sharedListsTable.userId, user?.id!)))
-    if (!sharedList.length) {
-        redirect('/app')
-    }
-    const list = await db.select().from(listsTable).where(eq(listsTable.id, sharedList[0].listId))
-    if (!list.length) {
-        redirect('/app')
-    }
-    const listItems = await db.select().from(listItemsTable).where(eq(listItemsTable.listId, list[0].id)).orderBy(asc(listItemsTable.order))
-    const listItemsTotal = await db.select().from(listItemsTable).where(and(eq(listItemsTable.listId, listId), eq(listItemsTable.isActive, 1)))
-    const totalValue = listItemsTotal.reduce((acc, item) => acc + item.price * item.quantity, 0)
-    return { ...list[0], items: listItems, totalValue }
-}

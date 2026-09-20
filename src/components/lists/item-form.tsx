@@ -3,18 +3,26 @@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { useAutofillFromLink } from "@/hooks/use-autofill-from-link"
-import { useFormatNumber } from "@/hooks/use-formatNumber"
+import { centsFromInput, formatInput } from "@/lib/money"
 import { Loader2Icon } from "lucide-react"
 import type { ReactNode } from "react"
 import type { UseFormReturn } from "react-hook-form"
 import type { z } from "zod"
 import { formSchema } from "./formSchema"
 
-type ItemFormValues = z.infer<typeof formSchema>
+export type ItemFormInput = {
+	name: string
+	link: string
+	store: string
+	imageUrl: string
+	price: string
+	quantity: string
+}
+export type ItemFormValues = z.output<typeof formSchema>
 
-type NewItemFormChildren = ReactNode | ((state: { isFetching: boolean }) => ReactNode)
+type ItemFormChildren = ReactNode | ((state: { isFetching: boolean }) => ReactNode)
 
-export function NewItemForm({
+export function ItemForm({
 	form,
 	onSubmit,
 	formId,
@@ -23,13 +31,13 @@ export function NewItemForm({
 	showImageUrl = true,
 	children,
 }: {
-	form: UseFormReturn<ItemFormValues>
+	form: UseFormReturn<ItemFormInput, unknown, ItemFormValues>
 	onSubmit: (values: ItemFormValues) => void
 	formId: string
 	className?: string
 	isOpen: boolean
 	showImageUrl?: boolean
-	children: NewItemFormChildren
+	children: ItemFormChildren
 }) {
 	const { isFetching } = useAutofillFromLink(form, isOpen)
 	const actions = typeof children === "function" ? children({ isFetching }) : children
@@ -124,8 +132,8 @@ export function NewItemForm({
 										placeholder="R$ 0,00"
 										{...field}
 										disabled={isFetching}
-										onChange={(e) => {
-											field.onChange(useFormatNumber(e.target.value))
+										onChange={(event) => {
+											field.onChange(formatInput(centsFromInput(event.target.value)))
 										}}
 									/>
 								</FormControl>
@@ -140,7 +148,7 @@ export function NewItemForm({
 							<FormItem>
 								<FormLabel>Quantidade</FormLabel>
 								<FormControl>
-									<Input type="number" min={1} {...field} disabled={isFetching} />
+									<Input type="number" min={1} {...field} value={field.value ?? ""} disabled={isFetching} />
 								</FormControl>
 								<FormMessage />
 							</FormItem>

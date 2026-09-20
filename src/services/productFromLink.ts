@@ -2,7 +2,8 @@
 
 import { lookup } from "node:dns/promises"
 import { isIP } from "node:net"
-import { formatBRL, isBlockedProductHtml, parseMoney, parseProductHtml, type ProductFromLink } from "@/lib/productFromHtml"
+import { isBlockedProductHtml, parseProductHtml, type ProductFromLink } from "@/lib/productFromHtml"
+import { centsFromScraped } from "@/lib/money"
 import { storeFromUrl } from "@/lib/storeFromUrl"
 
 const FETCH_TIMEOUT_MS = 12_000
@@ -262,8 +263,8 @@ async function fetchShopifyProduct(url: string): Promise<ProductFromLink | null>
 	const variantId = parsedUrl.searchParams.get("variant")
 	const variant =
 		(variantId ? variants.find((item) => String(item.id) === variantId) : undefined) ?? variants[0] ?? {}
-	const current = parseMoney(variant.price ?? product.price)
-	const original = parseMoney(variant.compare_at_price ?? product.compare_at_price)
+	const current = centsFromScraped(variant.price ?? product.price)
+	const original = centsFromScraped(variant.compare_at_price ?? product.compare_at_price)
 	const listPrice = original && current ? Math.max(original, current) : original || current
 	const image =
 		(typeof product.featured_image === "string" && product.featured_image) ||
@@ -282,7 +283,7 @@ async function fetchShopifyProduct(url: string): Promise<ProductFromLink | null>
 	return {
 		...(name ? { name } : {}),
 		store: storeFromUrl(url),
-		...(listPrice != null ? { price: formatBRL(listPrice) } : {}),
+		...(listPrice != null ? { price: listPrice } : {}),
 		...(image ? { imageUrl: image.startsWith("//") ? `https:${image}` : image } : {}),
 	}
 }
@@ -321,7 +322,7 @@ async function fetchMercadoLivreApi(url: string): Promise<ProductFromLink | null
 					pictures?: { url?: string }[]
 				}
 				const name = data.title || data.name
-				const originalPrice = data.original_price || data.price
+				const originalPrice = centsFromScraped(data.original_price || data.price)
 				const imageUrl = data.pictures?.[0]?.url || data.thumbnail
 				if (!name && originalPrice == null) {
 					continue
@@ -329,7 +330,7 @@ async function fetchMercadoLivreApi(url: string): Promise<ProductFromLink | null
 				return {
 					...(name ? { name } : {}),
 					store: storeFromUrl(url),
-					...(originalPrice != null ? { price: formatBRL(originalPrice) } : {}),
+					...(originalPrice != null ? { price: originalPrice } : {}),
 					...(imageUrl ? { imageUrl } : {}),
 				}
 			} catch {

@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
-import { useFormatNumber } from "./use-formatNumber";
+import { centsFromInput, formatInput } from "@/lib/money";
 
 export function useAddItem() {
     const [isOpen, setIsOpen] = useState(false);
@@ -56,7 +56,7 @@ export function useAddItem() {
                                     id="price"
                                     defaultValue={"R$ 0,00"}
                                     onChange={(e) => {
-                                        const formattedValue = useFormatNumber(e.target.value);
+                                        const formattedValue = formatInput(centsFromInput(e.target.value));
                                         e.target.value = formattedValue;
                                     }}
                                 />

@@ -1,8 +1,7 @@
 "use client"
-import React, { useEffect } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
-import { useFormatNumber } from "@/hooks/use-formatNumber";
-import { getListDetails, shareList } from "@/services/lists";
+import { shareList, type ListWithItems } from "@/services/lists";
 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -23,7 +22,7 @@ const formSchema = z.object({
     isPublic: z.boolean()
 })
 
-export function ShareList({ item }: { item?: Awaited<ReturnType<typeof getListDetails>> }) {
+export function ShareList({ item }: { item?: ListWithItems }) {
     const isMobile = useIsMobile()
     const [isOpen, setIsOpen] = React.useState(false);
     const [isLoading, setIsLoading] = React.useState(false);

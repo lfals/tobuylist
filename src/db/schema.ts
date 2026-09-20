@@ -1,3 +1,4 @@
+import { centsFromInput } from "@/lib/money";
 import { sql } from "drizzle-orm";
 import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from 'drizzle-zod';
@@ -53,10 +54,10 @@ export const listItemInsertSchema = createInsertSchema(listItemsTable, {
     store: (schema) => schema.min(2, {
         message: "Loja deve ter pelo menos 2 caracteres.",
     }),
-    price: z.string().transform((val) => {
-        return String(val).replace(/[^\d.,]/g, '').replace(',', '.')
+    price: z.union([z.number(), z.string()]).transform((val) => {
+        return typeof val === "number" ? Math.round(val) : centsFromInput(val)
     }),
-    quantity: (schema) => schema.min(1, {
+    quantity: z.union([z.number(), z.string()]).transform((val) => Number(val)).refine((val) => val >= 1, {
         message: "Quantidade deve ser maior que 0.",
     }),
 });

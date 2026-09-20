@@ -5,7 +5,7 @@ import {
 	CardDescription,
 	CardHeader,
 } from "@/components/ui/card";
-import { useFormatViewNumber } from "@/hooks/formatViewNumber";
+import { formatDisplay } from "@/lib/money";
 import { getListDashboard } from "@/services/lists";
 import Link from "next/link";
 
@@ -18,7 +18,7 @@ export default async function Dashboard() {
 				<div className="flex items-center gap-8">
 					<div className="min-w-32">
 						<h1>Total</h1>
-						<p className="text-2xl font-bold">{useFormatViewNumber(listsCards.totalValue.toString())}</p>
+						<p className="text-2xl font-bold">{formatDisplay(listsCards.totalValue)}</p>
 					</div>
 					<div >
 						<h1>Listas</h1>
@@ -45,7 +45,7 @@ export default async function Dashboard() {
 										</div>
 										<div>
 											<h1>Total</h1>
-											<p >{useFormatViewNumber(listCard.totalValue.toString())}</p>
+											<p >{formatDisplay(listCard.totalValue)}</p>
 										</div>
 									</div>
 								</CardContent>
