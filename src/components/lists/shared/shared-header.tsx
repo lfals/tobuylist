@@ -10,25 +10,25 @@ import { createListItem } from "@/services/listItem";
 import { useParams } from "next/navigation";
 import { z } from "zod";
 import { useIsMobile } from "@/hooks/use-mobile";
-
-import { useFormatNumber } from "@/hooks/use-formatNumber";
+import { Loader2Icon } from "lucide-react";
 
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { NewItemForm } from "../item-form";
 
 
 export default function SharedHeader({ data }: { data: any }) {
     const [isOpen, setIsOpen] = useState(false);
     const params = useParams()
     const isMobile = useIsMobile()
+    const [isSaving, setIsSaving] = useState(false)
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             name: "",
             link: "",
+            imageUrl: "",
             store: "",
             price: "R$ 0,00",
             quantity: "1",
@@ -36,13 +36,17 @@ export default function SharedHeader({ data }: { data: any }) {
     })
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
-
-        await createListItem(params.list as string, {
-            ...values,
-            quantity: Number(values.quantity),
-            listId: params.list as string
-        })
-        setIsOpen(false)
+        setIsSaving(true)
+        try {
+            await createListItem(params.list as string, {
+                ...values,
+                quantity: Number(values.quantity),
+                listId: params.list as string
+            })
+            setIsOpen(false)
+        } finally {
+            setIsSaving(false)
+        }
     }
 
     useEffect(() => {
@@ -60,7 +64,7 @@ export default function SharedHeader({ data }: { data: any }) {
                     <p className="text-sm text-gray-500">{data?.description}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    {Boolean(data?.public) && <Button onClick={() => setIsOpen(true)}>Adicionar</Button>}
+                    {Boolean(data?.public) && <Button type="button" onClick={() => setIsOpen(true)}>Adicionar</Button>}
                 </div>
             </div>
             {isMobile ? (
@@ -70,189 +74,46 @@ export default function SharedHeader({ data }: { data: any }) {
                             <DrawerHeader>
                                 <DrawerTitle>{"Novo item"}</DrawerTitle>
                             </DrawerHeader>
-                            <Form {...form}>
-                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4" id="create-item-form">
-                                    <FormField
-                                        control={form.control}
-                                        name="name"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Item</FormLabel>
-                                                <FormControl>
-                                                    <Input placeholder="shadcn" {...field} />
-                                                </FormControl>
-
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="store"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Loja</FormLabel>
-                                                <FormControl>
-                                                    <Input type="text" placeholder="shadcn" {...field} value={field.value ?? ''} />
-                                                </FormControl>
-
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="link"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>URL</FormLabel>
-                                                <FormControl>
-                                                    <Input type="text" placeholder="shadcn" {...field} value={field.value ?? ''} />
-                                                </FormControl>
-
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    <div className="flex gap-2">
-                                        <FormField
-                                            control={form.control}
-                                            name="price"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Preço</FormLabel>
-                                                    <FormControl>
-                                                        <Input type="text" placeholder="shadcn"
-                                                            {...field}
-                                                            onChange={(e) => {
-                                                                field.onChange(useFormatNumber(e.target.value));
-                                                            }}
-                                                        />
-                                                    </FormControl>
-                                                    <FormMessage />
-
-                                                </FormItem>
-                                            )}
-                                        />
-                                        <FormField
-                                            control={form.control}
-                                            name="quantity"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Quantidade</FormLabel>
-                                                    <FormControl>
-                                                        <Input type="number" min={1} {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </div>
+                            <NewItemForm
+                                form={form}
+                                onSubmit={onSubmit}
+                                formId="create-item-form"
+                                className="space-y-4 p-4"
+                                isOpen={isOpen}
+                            >
+                                {({ isFetching }) => (
                                     <DrawerFooter>
-                                        <Button type="submit" form="create-item-form">Adicionar</Button>
+                                        <Button type="submit" disabled={isSaving || isFetching} form="create-item-form">
+                                            {isSaving ? <Loader2Icon size={16} className="animate-spin" /> : "Adicionar"}
+                                        </Button>
                                     </DrawerFooter>
-                                </form>
-                            </Form>
-
+                                )}
+                            </NewItemForm>
                         </DrawerContent>
                     </Drawer>
                 </>
             ) : (
                 <>
                     <Dialog open={isOpen} onOpenChange={setIsOpen} modal>
-
                         <DialogContent className="sm:max-w-[425px]" >
                             <DialogHeader>
                                 <DialogTitle>Novo item</DialogTitle>
                             </DialogHeader>
-                            <Form {...form}>
-                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" id="create-item-form">
-                                    <FormField
-                                        control={form.control}
-                                        name="name"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Item</FormLabel>
-                                                <FormControl>
-                                                    <Input placeholder="shadcn" {...field} />
-                                                </FormControl>
-
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="store"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Loja</FormLabel>
-                                                <FormControl>
-                                                    <Input type="text" placeholder="shadcn" {...field} value={field.value ?? ''} />
-                                                </FormControl>
-
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="link"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>URL</FormLabel>
-                                                <FormControl>
-                                                    <Input type="text" placeholder="shadcn" {...field} value={field.value ?? ''} />
-                                                </FormControl>
-
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    <div className="flex gap-2">
-                                        <FormField
-                                            control={form.control}
-                                            name="price"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Preço</FormLabel>
-                                                    <FormControl>
-                                                        <Input type="text" placeholder="shadcn"
-                                                            {...field}
-                                                            onChange={(e) => {
-                                                                field.onChange(useFormatNumber(e.target.value));
-                                                            }}
-                                                        />
-                                                    </FormControl>
-                                                    <FormMessage />
-
-                                                </FormItem>
-                                            )}
-                                        />
-                                        <FormField
-                                            control={form.control}
-                                            name="quantity"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Quantidade</FormLabel>
-                                                    <FormControl>
-                                                        <Input type="number" min={1} {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-
-                                                </FormItem>
-                                            )}
-                                        />
-
-                                    </div>
+                            <NewItemForm
+                                form={form}
+                                onSubmit={onSubmit}
+                                formId="create-item-form"
+                                className="space-y-4"
+                                isOpen={isOpen}
+                            >
+                                {({ isFetching }) => (
                                     <DialogFooter>
-                                        <Button type="submit" form="create-item-form">Adicionar</Button>
+                                        <Button type="submit" disabled={isSaving || isFetching} form="create-item-form">
+                                            {isSaving ? <Loader2Icon size={16} className="animate-spin" /> : "Adicionar"}
+                                        </Button>
                                     </DialogFooter>
-                                </form>
-                            </Form>
+                                )}
+                            </NewItemForm>
                         </DialogContent>
                     </Dialog>
                 </>
