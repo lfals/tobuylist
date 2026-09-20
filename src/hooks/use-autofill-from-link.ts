@@ -2,7 +2,7 @@
 
 import { storeFromUrl } from "@/lib/storeFromUrl"
 import { fetchProductFromLink } from "@/services/productFromLink"
-import { useFormatNumber } from "@/hooks/use-formatNumber"
+import { formatNumber } from "@/lib/format-number"
 import { useEffect, useRef, useState } from "react"
 import type { UseFormReturn } from "react-hook-form"
 import type { z } from "zod"
@@ -59,7 +59,7 @@ export function useAutofillFromLink(form: UseFormReturn<ItemFormValues>, isOpen:
 					form.setValue("store", product.store, { shouldValidate: true })
 				}
 				if (product.price) {
-					form.setValue("price", useFormatNumber(product.price), { shouldValidate: true })
+					form.setValue("price", formatNumber(product.price), { shouldValidate: true })
 				}
 				if (product.imageUrl) {
 					form.setValue("imageUrl", product.imageUrl, { shouldValidate: true })

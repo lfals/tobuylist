@@ -102,6 +102,7 @@ const priceStripOnQuantity = /quantity:\s*Number\(values\.quantity\.replace\(/
 const callSites = [
 	"src/components/lists/body.tsx",
 	"src/components/lists/shared/body.tsx",
+	"src/components/lists/item-dialogs.tsx",
 ]
 for (const file of callSites) {
 	const source = readFileSync(join(root, file), "utf8")
