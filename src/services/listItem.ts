@@ -2,9 +2,9 @@
 
 import db from "@/db/drizzle"
 import { listItemInsertSchema, listItemsTable } from "@/db/schema"
-import { requireUserId } from "@/lib/current-user"
 import { centsFromInput } from "@/lib/money"
 import { storeFromUrl } from "@/lib/storeFromUrl"
+import { resolveWriteAccess } from "@/services/listLoad"
 import { eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
@@ -14,8 +14,24 @@ function centsOf(price: unknown) {
 	return typeof price === "number" ? price : centsFromInput(String(price ?? ""))
 }
 
+async function requireItemWrite(listId: string, action: "add" | "edit" | "reorder") {
+	const capabilities = await resolveWriteAccess(listId)
+	const allowed =
+		action === "add"
+			? capabilities?.canAddItem
+			: action === "reorder"
+				? capabilities?.canReorder
+				: capabilities?.canEditItem
+
+	if (!allowed) {
+		throw new Error("Unauthorized")
+	}
+
+	return capabilities
+}
+
 export const createListItem = async (listId: string, data: z.infer<typeof listItemInsertSchema>) => {
-	await requireUserId()
+	await requireItemWrite(listId, "add")
 
 	if (data.link && !data.store) {
 		data.store = storeFromUrl(data.link)
@@ -32,13 +48,13 @@ export const createListItem = async (listId: string, data: z.infer<typeof listIt
 }
 
 export const deleteListItem = async (item: { id: number; listId: string }) => {
-	await requireUserId()
+	await requireItemWrite(item.listId, "edit")
 	await db.delete(listItemsTable).where(eq(listItemsTable.id, item.id))
 	revalidatePath(`/app/${item.listId}`)
 }
 
 export const editListItem = async (listId: string, data: z.infer<typeof listItemInsertSchema>) => {
-	await requireUserId()
+	await requireItemWrite(listId, "edit")
 
 	if (data.link && !data.store) {
 		data.store = storeFromUrl(data.link)
@@ -55,7 +71,7 @@ export const editListItem = async (listId: string, data: z.infer<typeof listItem
 }
 
 export const markListItem = async (listId: string, itemId: number, isActive: number) => {
-	await requireUserId()
+	await requireItemWrite(listId, "edit")
 	await db.update(listItemsTable).set({ isActive }).where(eq(listItemsTable.id, itemId))
 	revalidatePath(`/app/${listId}`)
 }
@@ -65,7 +81,13 @@ export const reorderListItem = async (items: { id: number; order: number }[]) =>
 		return
 	}
 
-	await requireUserId()
+	const first = items[0]
+	const existing = await db.select({ listId: listItemsTable.listId }).from(listItemsTable).where(eq(listItemsTable.id, first.id)).limit(1)
+	if (!existing.length) {
+		throw new Error("Unauthorized")
+	}
+
+	await requireItemWrite(existing[0].listId, "reorder")
 
 	await db.transaction(async (tx) => {
 		for (const item of items) {

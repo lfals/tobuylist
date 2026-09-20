@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { listCapabilities, listRouteFromSearch } from "./listAccess"
+import { listCapabilities, listRelationship, listRouteFromSearch, routeForRelationship } from "./listAccess"
 
 describe("listRouteFromSearch", () => {
 	it("treats a missing share param as the owner route", () => {
@@ -12,6 +12,26 @@ describe("listRouteFromSearch", () => {
 
 	it("rejects any other share value", () => {
 		expect(listRouteFromSearch("1")).toBe("invalid")
+	})
+})
+
+describe("listRelationship", () => {
+	it("prefers owner over a saved-list bookmark", () => {
+		expect(listRelationship({ isOwner: true, isSaved: true })).toBe("owner")
+	})
+
+	it("treats a bookmark without ownership as saved", () => {
+		expect(listRelationship({ isOwner: false, isSaved: true })).toBe("saved")
+	})
+
+	it("treats everyone else as a visitor", () => {
+		expect(listRelationship({ isOwner: false, isSaved: false })).toBe("visitor")
+	})
+})
+
+describe("routeForRelationship", () => {
+	it("maps a visitor to the share-link route", () => {
+		expect(routeForRelationship("visitor")).toBe("share-link")
 	})
 })
 

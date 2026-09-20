@@ -6,7 +6,7 @@ import {
 	CardHeader,
 } from "@/components/ui/card"
 import { formatDisplay } from "@/lib/money"
-import { getListDashboard } from "@/services/lists-queries"
+import { getListDashboard } from "@/services/listLoad"
 import Link from "next/link"
 
 export default async function Dashboard() {

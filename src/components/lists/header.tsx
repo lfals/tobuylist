@@ -21,9 +21,11 @@ import { ShareList } from "./shareList"
 export default function Header({
 	list,
 	capabilities,
+	showImageUrl = true,
 }: {
 	list: ListSummary
 	capabilities: ListCapabilities
+	showImageUrl?: boolean
 }) {
 	const [isOpen, setIsOpen] = useState(false)
 	const [isSaving, startSaving] = useTransition()
@@ -79,6 +81,7 @@ export default function Header({
 							formId="create-item-form"
 							className="space-y-4 p-4"
 							isOpen={isOpen}
+							showImageUrl={showImageUrl}
 						>
 							{({ isFetching }) => (
 								<DrawerFooter>
@@ -102,6 +105,7 @@ export default function Header({
 							formId="create-item-form"
 							className="space-y-4"
 							isOpen={isOpen}
+							showImageUrl={showImageUrl}
 						>
 							{({ isFetching }) => (
 								<DialogFooter>

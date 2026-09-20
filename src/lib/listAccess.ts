@@ -1,14 +1,41 @@
 export type ListRoute = "owner" | "share-link" | "saved-list"
+export type ListRelationship = "owner" | "visitor" | "saved"
 
 export type ListCapabilities = {
 	route: ListRoute
-	mode: "owner" | "visitor" | "saved"
+	mode: ListRelationship
 	canEditList: boolean
 	canShare: boolean
 	canSave: boolean
 	canAddItem: boolean
 	canEditItem: boolean
 	canReorder: boolean
+}
+
+export function listRelationship({
+	isOwner,
+	isSaved,
+}: {
+	isOwner: boolean
+	isSaved: boolean
+}): ListRelationship {
+	if (isOwner) {
+		return "owner"
+	}
+	if (isSaved) {
+		return "saved"
+	}
+	return "visitor"
+}
+
+export function routeForRelationship(relationship: ListRelationship): ListRoute {
+	if (relationship === "owner") {
+		return "owner"
+	}
+	if (relationship === "saved") {
+		return "saved-list"
+	}
+	return "share-link"
 }
 
 export function listRouteFromSearch(share?: string): ListRoute | "invalid" {

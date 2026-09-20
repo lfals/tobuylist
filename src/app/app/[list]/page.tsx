@@ -4,11 +4,11 @@ import Header from "@/components/lists/header"
 import Items from "@/components/lists/items"
 import { ListHeaderSkeleton, ListItemsSkeleton } from "@/components/lists/list-skeletons"
 import { listRouteFromSearch, type ListRoute } from "@/lib/listAccess"
-import { loadListItemsForRoute, loadListSummaryView } from "@/services/lists"
+import { loadItems, loadSummaryView } from "@/services/listLoad"
 import { redirect } from "next/navigation"
 
 async function ListHeader({ listId, route }: { listId: string; route: ListRoute }) {
-	const view = await loadListSummaryView(listId, route)
+	const view = await loadSummaryView(listId, route)
 	if (!view) {
 		redirect("/app")
 	}
@@ -17,8 +17,8 @@ async function ListHeader({ listId, route }: { listId: string; route: ListRoute 
 
 async function ListItems({ listId, route }: { listId: string; route: ListRoute }) {
 	const [view, items] = await Promise.all([
-		loadListSummaryView(listId, route),
-		loadListItemsForRoute(listId, route),
+		loadSummaryView(listId, route),
+		loadItems(listId, route),
 	])
 	if (!view || !items) {
 		redirect("/app")
@@ -39,8 +39,8 @@ export default async function ListPage({
 		redirect("/app")
 	}
 
-	void loadListSummaryView(param.list, route)
-	void loadListItemsForRoute(param.list, route)
+	void loadSummaryView(param.list, route)
+	void loadItems(param.list, route)
 
 	return (
 		<div className="flex flex-col gap-10">

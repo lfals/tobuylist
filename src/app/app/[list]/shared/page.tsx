@@ -1,22 +1,22 @@
+import Header from "@/components/lists/header"
 import Items from "@/components/lists/items"
 import { ListHeaderSkeleton, ListItemsSkeleton } from "@/components/lists/list-skeletons"
-import SharedHeader from "@/components/lists/shared/shared-header"
-import { loadListItemsForRoute, loadListSummaryView } from "@/services/lists"
+import { loadItems, loadSummaryView } from "@/services/listLoad"
 import { redirect } from "next/navigation"
 import { Suspense } from "react"
 
 async function SharedListHeader({ listId }: { listId: string }) {
-	const view = await loadListSummaryView(listId, "saved-list")
+	const view = await loadSummaryView(listId, "saved-list")
 	if (!view) {
 		redirect("/app")
 	}
-	return <SharedHeader list={view.list} capabilities={view.capabilities} />
+	return <Header list={view.list} capabilities={view.capabilities} showImageUrl={false} />
 }
 
 async function SharedListItems({ listId }: { listId: string }) {
 	const [view, items] = await Promise.all([
-		loadListSummaryView(listId, "saved-list"),
-		loadListItemsForRoute(listId, "saved-list"),
+		loadSummaryView(listId, "saved-list"),
+		loadItems(listId, "saved-list"),
 	])
 	if (!view || !items) {
 		redirect("/app")
@@ -26,8 +26,8 @@ async function SharedListItems({ listId }: { listId: string }) {
 
 export default async function SharedListPage({ params }: { params: Promise<{ list: string }> }) {
 	const param = await params
-	void loadListSummaryView(param.list, "saved-list")
-	void loadListItemsForRoute(param.list, "saved-list")
+	void loadSummaryView(param.list, "saved-list")
+	void loadItems(param.list, "saved-list")
 
 	return (
 		<div className="flex flex-col gap-10">

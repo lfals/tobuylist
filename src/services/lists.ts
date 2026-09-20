@@ -2,23 +2,13 @@
 
 import db from "@/db/drizzle"
 import { listItemsTable, listsTable, sharedListsTable } from "@/db/schema"
-import { getCurrentUser, requireUserId } from "@/lib/current-user"
-import { listCapabilities, type ListRoute } from "@/lib/listAccess"
-import {
-	getListDetails,
-	getListItems,
-	getListSummary,
-	getSharedList,
-	getSharedListDetailsItems,
-	getSharedListDetailsSummary,
-	getSharedListItems,
-	getSharedListSummary,
-} from "@/services/lists-queries"
+import { requireUserId } from "@/lib/current-user"
+import type { ListRoute } from "@/lib/listAccess"
+import { loadDetails } from "@/services/listLoad"
 import { and, eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { randomUUID } from "node:crypto"
-import { cache } from "react"
 
 export async function editList(list: Omit<typeof listsTable.$inferInsert, "id" | "userId">, listId: string) {
 	const userId = await requireUserId()
@@ -50,44 +40,12 @@ export async function changeListVisibility(listId: string, isActive: 0 | 1) {
 	revalidatePath("/app")
 }
 
-export const loadListSummaryView = cache(async (listId: string, route: ListRoute) => {
-	const list =
-		route === "owner"
-			? await getListSummary(listId)
-			: route === "share-link"
-				? await getSharedListSummary(listId)
-				: await getSharedListDetailsSummary(listId)
-
-	if (!list) {
-		return null
-	}
-
-	const user = await getCurrentUser()
-	return {
-		list,
-		capabilities: listCapabilities({
-			route,
-			isOwner: list.userId === user?.id,
-			isPublic: Boolean(list.public),
-		}),
-	}
-})
-
-export async function loadListItemsForRoute(listId: string, route: ListRoute) {
-	if (route === "owner") {
-		return getListItems(listId)
-	}
-	if (route === "share-link") {
-		return getSharedListItems(listId)
-	}
-	return getSharedListDetailsItems(listId)
-}
-
-export async function duplicateList(listId: string) {
-	const list = await getListDetails(listId)
+export async function copyList(listId: string, source: ListRoute) {
+	const list = await loadDetails(listId, source)
 	if (!list) {
 		redirect("/app")
 	}
+
 	const newList = await createList({
 		name: `${list.name} - Copia`,
 		description: list.description,
@@ -106,6 +64,14 @@ export async function duplicateList(listId: string) {
 
 	revalidatePath(`/app`)
 	redirect(`/app/${newList.id}`)
+}
+
+export async function duplicateList(listId: string) {
+	return copyList(listId, "owner")
+}
+
+export async function duplicateSharedList(listId: string) {
+	return copyList(listId, "saved-list")
 }
 
 export async function shareList(listId: string, isPublic: boolean) {
@@ -126,31 +92,6 @@ export async function saveList(listId: string) {
 	revalidatePath(`/app`)
 	revalidatePath(`/app/${listId}/shared`)
 	redirect(`/app/${listId}/shared`)
-}
-
-export async function duplicateSharedList(listId: string) {
-	const list = await getSharedList(listId)
-	if (!list) {
-		redirect("/app")
-	}
-	const newList = await createList({
-		name: `${list.name} - Copia`,
-		description: list.description,
-		isActive: list.isActive,
-		public: list.public,
-		shared: list.shared,
-	})
-
-	const newListItems = list.items.map((item) => {
-		const { id, ...rest } = item
-		return { ...rest, listId: newList.id }
-	})
-	if (newListItems.length > 0) {
-		await db.insert(listItemsTable).values(newListItems)
-	}
-
-	revalidatePath(`/app`)
-	redirect(`/app/${newList.id}`)
 }
 
 export async function deleteSharedList(listId: string) {

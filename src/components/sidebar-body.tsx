@@ -1,9 +1,8 @@
 
 import React from "react";
-import { SidebarItem } from "./sidebar-item";
 import { SidebarMenuItem } from "./ui/sidebar";
-import { getAll, getSharedLists } from "@/services/lists-queries";
-import { SidebarSavedItem } from "./sidebar-saved-item";
+import { getAll, getSharedLists } from "@/services/listLoad";
+import { SidebarListRow } from "./sidebar-list-row";
 import { Separator } from "./ui/separator";
 
 export async function SidebarBody() {
@@ -14,7 +13,7 @@ export async function SidebarBody() {
             <p className="text-sm text-muted-foreground">Minhas listas</p>
             {lists.length > 0 ? lists.map((item) => (
                 <SidebarMenuItem key={item.id}>
-                    <SidebarItem item={item} />
+                    <SidebarListRow item={item} kind="owned" />
                 </SidebarMenuItem>
             )) : (
                 <SidebarMenuItem>
@@ -25,7 +24,7 @@ export async function SidebarBody() {
             <p className="text-sm text-muted-foreground">Listas salvas</p>
             {sharedLists.length > 0 ? sharedLists.map((item) => (
                 <SidebarMenuItem key={item.id}>
-                    <SidebarSavedItem item={item} />
+                    <SidebarListRow item={item} kind="saved" />
                 </SidebarMenuItem>
             )) : null}
         </>
