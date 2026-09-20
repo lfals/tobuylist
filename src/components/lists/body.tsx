@@ -53,7 +53,7 @@ export default function Body({ item }: { item: Awaited<ReturnType<typeof getList
         editListItem(params.list as string, {
             ...values,
             id: editingItem.id,
-            quantity: Number(values.quantity.replace("R$ ", "").replace(",", "").replace(".", "")),
+            quantity: Number(values.quantity),
             listId: params.list as string
         })
 

@@ -50,7 +50,7 @@ export default function Body({ item, isPublic }: { item: Awaited<ReturnType<type
         editListItem(params.list as string, {
             ...values,
             id: editingItem.id,
-            quantity: Number(values.quantity.replace("R$ ", "").replace(",", "").replace(".", "")),
+            quantity: Number(values.quantity),
             listId: params.list as string
         })
 
