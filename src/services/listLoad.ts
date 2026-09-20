@@ -1,18 +1,12 @@
 import db from "@/db/drizzle"
 import { listItemsTable, listsTable, sharedListsTable } from "@/db/schema"
 import { getCurrentUser, requireUserId } from "@/lib/current-user"
-import {
-	listCapabilities,
-	listRelationship,
-	routeForRelationship,
-	type ListRoute,
-} from "@/lib/listAccess"
-import { totalCents } from "@/lib/listTotal"
+import { listCapabilities, listRelationship, type ListRoute } from "@/lib/listAccess"
+import { activeTotalSql, totalCents } from "@/lib/listTotal"
 import type { ListDashboard, ListDetails, ListItemRecord, ListSummary, SidebarList } from "@/types/list"
 import { and, eq, sql } from "drizzle-orm"
 import { cache } from "react"
 
-const activeTotalSql = sql<number>`coalesce(sum(case when ${listItemsTable.isActive} = 1 then ${listItemsTable.price} * ${listItemsTable.quantity} else 0 end), 0)`
 const itemCountSql = sql<number>`count(${listItemsTable.id})`
 
 const listSummaryColumns = {
@@ -69,56 +63,49 @@ async function listIsVisible(listId: string, route: ListRoute) {
 	return rows.length > 0
 }
 
-const loadSummaryQuery = cache(async (listId: string, route: ListRoute): Promise<ListSummary | null> => {
-	if (route === "owner") {
-		const userId = await requireUserId()
-		const rows = await db
-			.select({
-				...listSummaryColumns,
-				totalValue: activeTotalSql,
-			})
-			.from(listsTable)
-			.leftJoin(listItemsTable, eq(listItemsTable.listId, listsTable.id))
-			.where(and(eq(listsTable.id, listId), eq(listsTable.userId, userId)))
-			.groupBy(listsTable.id, listsTable.name, listsTable.description, listsTable.public, listsTable.userId)
-			.limit(1)
-		return rows[0] ? toSummary(rows[0]) : null
-	}
-
-	if (route === "share-link") {
-		const rows = await db
-			.select({
-				...listSummaryColumns,
-				totalValue: activeTotalSql,
-			})
-			.from(listsTable)
-			.leftJoin(listItemsTable, eq(listItemsTable.listId, listsTable.id))
-			.where(and(eq(listsTable.id, listId), eq(listsTable.shared, 1)))
-			.groupBy(listsTable.id, listsTable.name, listsTable.description, listsTable.public, listsTable.userId)
-			.limit(1)
-		return rows[0] ? toSummary(rows[0]) : null
-	}
-
-	const userId = await requireUserId()
+const summaryById = cache(async (listId: string): Promise<ListSummary | null> => {
 	const rows = await db
 		.select({
 			...listSummaryColumns,
 			totalValue: activeTotalSql,
 		})
-		.from(sharedListsTable)
-		.innerJoin(listsTable, eq(sharedListsTable.listId, listsTable.id))
+		.from(listsTable)
 		.leftJoin(listItemsTable, eq(listItemsTable.listId, listsTable.id))
-		.where(and(eq(sharedListsTable.listId, listId), eq(sharedListsTable.userId, userId)))
+		.where(eq(listsTable.id, listId))
 		.groupBy(listsTable.id, listsTable.name, listsTable.description, listsTable.public, listsTable.userId)
 		.limit(1)
+
 	return rows[0] ? toSummary(rows[0]) : null
 })
 
-export const loadSummary = loadSummaryQuery
+async function hasSavedBookmark(listId: string, userId: string) {
+	const bookmark = await db
+		.select({ listId: sharedListsTable.listId })
+		.from(sharedListsTable)
+		.where(and(eq(sharedListsTable.listId, listId), eq(sharedListsTable.userId, userId)))
+		.limit(1)
+	return bookmark.length > 0
+}
+
+async function capabilitiesForList(listId: string, listOwnerId: string, isPublic: boolean) {
+	const user = await getCurrentUser()
+	const isOwner = Boolean(user?.id && listOwnerId === user.id)
+	const isSaved = !isOwner && user?.id ? await hasSavedBookmark(listId, user.id) : false
+	return listCapabilities({
+		relationship: listRelationship({ isOwner, isSaved }),
+		isPublic,
+	})
+}
+
+export const loadSummary = cache(async (listId: string, route: ListRoute): Promise<ListSummary | null> => {
+	if (!(await listIsVisible(listId, route))) {
+		return null
+	}
+	return summaryById(listId)
+})
 
 export const loadItems = cache(async (listId: string, route: ListRoute): Promise<ListItemRecord[] | null> => {
-	const visible = await listIsVisible(listId, route)
-	if (!visible) {
+	if (!(await listIsVisible(listId, route))) {
 		return null
 	}
 
@@ -130,8 +117,7 @@ export const loadItems = cache(async (listId: string, route: ListRoute): Promise
 })
 
 export const loadDetails = cache(async (listId: string, route: ListRoute): Promise<ListDetails | null> => {
-	const visible = await listIsVisible(listId, route)
-	if (!visible) {
+	if (!(await listIsVisible(listId, route))) {
 		return null
 	}
 
@@ -157,19 +143,14 @@ export const loadSummaryView = cache(async (listId: string, route: ListRoute) =>
 		return null
 	}
 
-	const user = await getCurrentUser()
 	return {
 		list,
-		capabilities: listCapabilities({
-			route,
-			isOwner: list.userId === user?.id,
-			isPublic: Boolean(list.public),
-		}),
+		capabilities: await capabilitiesForList(listId, list.userId, Boolean(list.public)),
 	}
 })
 
 export async function resolveWriteAccess(listId: string) {
-	const userId = await requireUserId()
+	await requireUserId()
 	const list = await db
 		.select({ userId: listsTable.userId, public: listsTable.public })
 		.from(listsTable)
@@ -180,23 +161,7 @@ export async function resolveWriteAccess(listId: string) {
 		return null
 	}
 
-	const isOwner = list[0].userId === userId
-	let isSaved = false
-	if (!isOwner) {
-		const bookmark = await db
-			.select({ listId: sharedListsTable.listId })
-			.from(sharedListsTable)
-			.where(and(eq(sharedListsTable.listId, listId), eq(sharedListsTable.userId, userId)))
-			.limit(1)
-		isSaved = bookmark.length > 0
-	}
-
-	const relationship = listRelationship({ isOwner, isSaved })
-	return listCapabilities({
-		route: routeForRelationship(relationship),
-		isOwner,
-		isPublic: Boolean(list[0].public),
-	})
+	return capabilitiesForList(listId, list[0].userId, Boolean(list[0].public))
 }
 
 export const getAll = cache(async (): Promise<SidebarList[]> => {

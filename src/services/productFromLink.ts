@@ -3,6 +3,7 @@
 import { lookup } from "node:dns/promises"
 import { isIP } from "node:net"
 import { isBlockedProductHtml, parseProductHtml, type ProductFromLink } from "@/lib/productFromHtml"
+import { isUsableItemImage } from "@/lib/itemImage"
 import { centsFromScraped } from "@/lib/money"
 import { storeFromUrl } from "@/lib/storeFromUrl"
 
@@ -315,11 +316,13 @@ async function fetchShopifyProduct(url: string): Promise<ProductFromLink | null>
 		return null
 	}
 
+	const imageUrl = image ? (image.startsWith("//") ? `https:${image}` : image) : undefined
+
 	return {
 		...(name ? { name } : {}),
 		store: storeFromUrl(url),
 		...(listPrice != null ? { price: listPrice } : {}),
-		...(image ? { imageUrl: image.startsWith("//") ? `https:${image}` : image } : {}),
+		...(imageUrl && isUsableItemImage(imageUrl) ? { imageUrl } : {}),
 	}
 }
 
@@ -366,7 +369,7 @@ async function fetchMercadoLivreApi(url: string): Promise<ProductFromLink | null
 					...(name ? { name } : {}),
 					store: storeFromUrl(url),
 					...(originalPrice != null ? { price: originalPrice } : {}),
-					...(imageUrl ? { imageUrl } : {}),
+					...(imageUrl && isUsableItemImage(imageUrl) ? { imageUrl } : {}),
 				}
 			} catch {
 				continue

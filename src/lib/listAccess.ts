@@ -2,8 +2,7 @@ export type ListRoute = "owner" | "share-link" | "saved-list"
 export type ListRelationship = "owner" | "visitor" | "saved"
 
 export type ListCapabilities = {
-	route: ListRoute
-	mode: ListRelationship
+	relationship: ListRelationship
 	canEditList: boolean
 	canShare: boolean
 	canSave: boolean
@@ -49,18 +48,15 @@ export function listRouteFromSearch(share?: string): ListRoute | "invalid" {
 }
 
 export function listCapabilities({
-	route,
-	isOwner,
+	relationship,
 	isPublic,
 }: {
-	route: ListRoute
-	isOwner: boolean
+	relationship: ListRelationship
 	isPublic: boolean
 }): ListCapabilities {
-	if (isOwner) {
+	if (relationship === "owner") {
 		return {
-			route,
-			mode: "owner",
+			relationship,
 			canEditList: true,
 			canShare: true,
 			canSave: false,
@@ -70,10 +66,9 @@ export function listCapabilities({
 		}
 	}
 
-	if (route === "share-link") {
+	if (relationship === "visitor") {
 		return {
-			route,
-			mode: "visitor",
+			relationship,
 			canEditList: false,
 			canShare: false,
 			canSave: true,
@@ -84,8 +79,7 @@ export function listCapabilities({
 	}
 
 	return {
-		route,
-		mode: "saved",
+		relationship,
 		canEditList: false,
 		canShare: false,
 		canSave: false,

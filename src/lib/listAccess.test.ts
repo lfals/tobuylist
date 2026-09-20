@@ -36,9 +36,9 @@ describe("routeForRelationship", () => {
 })
 
 describe("listCapabilities", () => {
-	it("gives the list owner full item and list actions even on a share link", () => {
-		expect(listCapabilities({ route: "share-link", isOwner: true, isPublic: false })).toMatchObject({
-			mode: "owner",
+	it("gives the list owner full item and list actions", () => {
+		expect(listCapabilities({ relationship: "owner", isPublic: false })).toMatchObject({
+			relationship: "owner",
 			canEditList: true,
 			canShare: true,
 			canAddItem: true,
@@ -49,8 +49,8 @@ describe("listCapabilities", () => {
 	})
 
 	it("lets a visitor save a share link and never edit in place", () => {
-		expect(listCapabilities({ route: "share-link", isOwner: false, isPublic: true })).toMatchObject({
-			mode: "visitor",
+		expect(listCapabilities({ relationship: "visitor", isPublic: true })).toMatchObject({
+			relationship: "visitor",
 			canSave: true,
 			canAddItem: false,
 			canEditItem: false,
@@ -59,13 +59,13 @@ describe("listCapabilities", () => {
 	})
 
 	it("lets a saved-list viewer change items only when the list is public", () => {
-		expect(listCapabilities({ route: "saved-list", isOwner: false, isPublic: true })).toMatchObject({
-			mode: "saved",
+		expect(listCapabilities({ relationship: "saved", isPublic: true })).toMatchObject({
+			relationship: "saved",
 			canAddItem: true,
 			canEditItem: true,
 			canReorder: true,
 		})
-		expect(listCapabilities({ route: "saved-list", isOwner: false, isPublic: false })).toMatchObject({
+		expect(listCapabilities({ relationship: "saved", isPublic: false })).toMatchObject({
 			canAddItem: false,
 			canEditItem: false,
 			canReorder: false,

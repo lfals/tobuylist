@@ -1,4 +1,5 @@
 import { centsFromScraped, type Cents } from "./money"
+import { isUsableItemImage } from "./itemImage"
 import { storeFromUrl } from "./storeFromUrl"
 
 export type ProductFromLink = {
@@ -269,11 +270,12 @@ export function parseProductHtml(html: string, sourceUrl: string): ProductFromLi
 	const name = rawName ? cleanProductName(decodeHtml(rawName)) : undefined
 	const imageUrl = jsonLd.imageUrl || getMeta(html, "og:image") || getMeta(html, "twitter:image")
 	const store = storeFromUrl(sourceUrl)
+	const resolvedImage = imageUrl ? absoluteAssetUrl(imageUrl, sourceUrl) : undefined
 
 	return {
 		...(name ? { name } : {}),
 		...(store ? { store } : {}),
 		...(priceValue != null ? { price: priceValue } : {}),
-		...(imageUrl ? { imageUrl: absoluteAssetUrl(imageUrl, sourceUrl) } : {}),
+		...(resolvedImage && isUsableItemImage(resolvedImage) ? { imageUrl: resolvedImage } : {}),
 	}
 }

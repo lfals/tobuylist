@@ -2,6 +2,7 @@
 
 import db from "@/db/drizzle"
 import { listItemInsertSchema, listItemsTable } from "@/db/schema"
+import { isUsableItemImage } from "@/lib/itemImage"
 import { centsFromInput } from "@/lib/money"
 import { storeFromUrl } from "@/lib/storeFromUrl"
 import { resolveWriteAccess } from "@/services/listLoad"
@@ -10,7 +11,7 @@ import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { resolveItemImage } from "./itemImage"
 
-function centsOf(price: unknown) {
+function toCents(price: unknown) {
 	return typeof price === "number" ? price : centsFromInput(String(price ?? ""))
 }
 
@@ -37,11 +38,14 @@ export const createListItem = async (listId: string, data: z.infer<typeof listIt
 		data.store = storeFromUrl(data.link)
 	}
 
+	if (data.imageUrl && !isUsableItemImage(data.imageUrl)) {
+		data.imageUrl = ""
+	}
 	if (data.imageUrl === "") {
 		data.imageUrl = await resolveItemImage(data.name)
 	}
 
-	const listItem = await db.insert(listItemsTable).values({ ...data, price: centsOf(data.price), listId }).returning()
+	const listItem = await db.insert(listItemsTable).values({ ...data, price: toCents(data.price), listId }).returning()
 
 	revalidatePath(`/app/${listId}`)
 	return listItem
@@ -59,10 +63,13 @@ export const editListItem = async (listId: string, data: z.infer<typeof listItem
 	if (data.link && !data.store) {
 		data.store = storeFromUrl(data.link)
 	}
+	if (data.imageUrl && !isUsableItemImage(data.imageUrl)) {
+		data.imageUrl = ""
+	}
 
 	const listItem = await db
 		.update(listItemsTable)
-		.set({ ...data, price: centsOf(data.price) })
+		.set({ ...data, price: toCents(data.price) })
 		.where(eq(listItemsTable.id, data.id!))
 		.returning()
 

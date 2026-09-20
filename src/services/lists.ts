@@ -66,14 +66,6 @@ export async function copyList(listId: string, source: ListRoute) {
 	redirect(`/app/${newList.id}`)
 }
 
-export async function duplicateList(listId: string) {
-	return copyList(listId, "owner")
-}
-
-export async function duplicateSharedList(listId: string) {
-	return copyList(listId, "saved-list")
-}
-
 export async function shareList(listId: string, isPublic: boolean) {
 	const userId = await requireUserId()
 	await db

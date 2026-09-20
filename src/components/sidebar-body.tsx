@@ -13,7 +13,7 @@ export async function SidebarBody() {
             <p className="text-sm text-muted-foreground">Minhas listas</p>
             {lists.length > 0 ? lists.map((item) => (
                 <SidebarMenuItem key={item.id}>
-                    <SidebarListRow item={item} kind="owned" />
+                    <SidebarListRow item={item} route="owner" />
                 </SidebarMenuItem>
             )) : (
                 <SidebarMenuItem>
@@ -24,7 +24,7 @@ export async function SidebarBody() {
             <p className="text-sm text-muted-foreground">Listas salvas</p>
             {sharedLists.length > 0 ? sharedLists.map((item) => (
                 <SidebarMenuItem key={item.id}>
-                    <SidebarListRow item={item} kind="saved" />
+                    <SidebarListRow item={item} route="saved-list" />
                 </SidebarMenuItem>
             )) : null}
         </>
