@@ -63,7 +63,7 @@ export function ItemForm({
 						<FormItem>
 							<FormLabel className="flex items-center gap-2">
 								Link
-								{isFetching && <Loader2Icon size={14} className="animate-spin" />}
+								{isFetching ? <Loader2Icon size={14} className="animate-spin" /> : null}
 							</FormLabel>
 							<FormControl>
 								<Input
@@ -104,7 +104,7 @@ export function ItemForm({
 						</FormItem>
 					)}
 				/>
-				{showImageUrl && (
+				{showImageUrl ? (
 					<FormField
 						control={form.control}
 						name="imageUrl"
@@ -118,7 +118,7 @@ export function ItemForm({
 							</FormItem>
 						)}
 					/>
-				)}
+				) : null}
 				<div className="flex gap-2">
 					<FormField
 						control={form.control}

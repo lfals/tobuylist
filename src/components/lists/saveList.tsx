@@ -15,7 +15,7 @@ export function SaveList({ listId, promptToSave }: { listId: string; promptToSav
 			action: {
 				label: "Adicionar",
 				onClick: () => {
-					saveList(listId)
+					void saveList(listId)
 				},
 			},
 		})

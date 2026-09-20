@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { SidebarMenuButton } from "./ui/sidebar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { MoreVerticalIcon } from "lucide-react";
 import {
     AlertDialog,
@@ -16,11 +16,12 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useState } from "react"
-import { deleteList, changeListVisibility, getAll, duplicateList, duplicateSharedList, deleteSharedList } from "@/services/lists";
+import { duplicateSharedList, deleteSharedList } from "@/services/lists";
 import { buttonVariants } from "./ui/button";
 import { cn } from "@/lib/utils";
+import type { SidebarList } from "@/types/list";
 
-export function SidebarSavedItem({ item }: { item: Awaited<ReturnType<typeof getAll>>[number] }) {
+export function SidebarSavedItem({ item }: { item: SidebarList }) {
     const [isOpen, setIsOpen] = useState(false)
 
     return (

@@ -3,7 +3,7 @@
 
 import { Button } from "./ui/button";
 import { HomeIcon, PlusIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from 'next/link'
 
 import { z } from "zod"
@@ -12,7 +12,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Input } from "./ui/input";
-import { useAuth } from "@clerk/nextjs";
 import { createList } from "@/services/lists";
 import { redirect } from "next/navigation";
 import { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from "./ui/drawer";
@@ -28,11 +27,6 @@ const formSchema = z.object({
 export function SidebarHeaderItem() {
     const [isOpen, setIsOpen] = useState(false);
     const isMobile = useIsMobile()
-
-    function openAddListModal() {
-        setIsOpen(true);
-    }
-
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -40,6 +34,17 @@ export function SidebarHeaderItem() {
             description: "",
         },
     })
+
+    function handleOpenChange(open: boolean) {
+        setIsOpen(open)
+        if (!open) {
+            form.reset()
+        }
+    }
+
+    function openAddListModal() {
+        setIsOpen(true);
+    }
 
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -50,13 +55,10 @@ export function SidebarHeaderItem() {
         })
 
         setIsOpen(false)
+        form.reset()
 
         redirect(`/app/${newList.id}`)
     }
-
-    useEffect(() => {
-        form.reset()
-    }, [isOpen])
 
 
     return (
@@ -73,7 +75,7 @@ export function SidebarHeaderItem() {
             </div>
 
             {isMobile ? (<>
-                <Drawer open={isOpen} onOpenChange={setIsOpen}>
+                <Drawer open={isOpen} onOpenChange={handleOpenChange}>
                     <DrawerContent className="sm:max-w-[425px]" >
                         <Form  {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 p-4" id="add-list-form">
@@ -121,7 +123,7 @@ export function SidebarHeaderItem() {
                 </Drawer>
             </>) : (<>
 
-                <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                <Dialog open={isOpen} onOpenChange={handleOpenChange}>
                     <DialogContent className="sm:max-w-[425px]" >
                         <Form  {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8" id="add-list-form">

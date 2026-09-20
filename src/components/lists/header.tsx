@@ -7,78 +7,68 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import type { ListCapabilities } from "@/lib/listAccess"
 import { formatDisplay } from "@/lib/money"
 import { createListItem } from "@/services/listItem"
-import type { ListWithItems } from "@/services/lists"
+import type { ListSummary } from "@/types/list"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Loader2Icon } from "lucide-react"
-import { useParams } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useState, useTransition } from "react"
 import { useForm } from "react-hook-form"
 import EditList from "./editList"
-import { formSchema } from "./formSchema"
+import { emptyItemFormValues, formSchema } from "./formSchema"
 import { ItemForm, type ItemFormInput, type ItemFormValues } from "./item-form"
 import { SaveList } from "./saveList"
 import { ShareList } from "./shareList"
 
 export default function Header({
-	data,
+	list,
 	capabilities,
 }: {
-	data: ListWithItems
+	list: ListSummary
 	capabilities: ListCapabilities
 }) {
 	const [isOpen, setIsOpen] = useState(false)
-	const [isSaving, setIsSaving] = useState(false)
-	const params = useParams()
+	const [isSaving, startSaving] = useTransition()
 	const isMobile = useIsMobile()
 
 	const form = useForm<ItemFormInput, unknown, ItemFormValues>({
 		resolver: zodResolver(formSchema),
-		defaultValues: {
-			name: "",
-			link: "",
-			imageUrl: "",
-			store: "",
-			price: "R$ 0,00",
-			quantity: "1",
-		},
+		defaultValues: emptyItemFormValues,
 	})
 
-	async function onSubmit(values: ItemFormValues) {
-		setIsSaving(true)
-		try {
-			await createListItem(params.list as string, {
+	function onSubmit(values: ItemFormValues) {
+		startSaving(async () => {
+			await createListItem(list.id, {
 				...values,
-				listId: params.list as string,
+				listId: list.id,
 			})
 			setIsOpen(false)
-		} finally {
-			setIsSaving(false)
-		}
+			form.reset(emptyItemFormValues)
+		})
 	}
 
-	useEffect(() => {
-		if (!isOpen) {
-			form.reset()
+	function handleOpenChange(open: boolean) {
+		setIsOpen(open)
+		if (!open) {
+			form.reset(emptyItemFormValues)
 		}
-	}, [form, isOpen])
+	}
 
 	return (
 		<>
 			<div className="flex items-center justify-between">
 				<div>
-					<h1 className="text-2xl font-bold">{formatDisplay(data.totalValue)}</h1>
-					<h2 className="text-4xl font-bold">{data.name}</h2>
-					<p className="text-sm text-gray-500">{data.description}</p>
+					<h1 className="text-2xl font-bold">{formatDisplay(list.totalValue)}</h1>
+					<h2 className="text-4xl font-bold">{list.name}</h2>
+					<p className="text-sm text-gray-500">{list.description}</p>
 				</div>
 				<div className="flex items-center gap-2">
-					{capabilities.canShare && <ShareList item={data} />}
+					{capabilities.canShare && <ShareList item={list} />}
 					{capabilities.canAddItem && <Button type="button" onClick={() => setIsOpen(true)}>Adicionar</Button>}
-					{capabilities.canEditList && <EditList item={data} />}
-					{capabilities.canSave && <SaveList listId={data.id} promptToSave={Boolean(data.public)} />}
+					{capabilities.canEditList && <EditList item={list} />}
+					{capabilities.canSave && <SaveList listId={list.id} promptToSave={Boolean(list.public)} />}
 				</div>
 			</div>
 			{isMobile ? (
-				<Drawer open={isOpen} onOpenChange={setIsOpen}>
+				<Drawer open={isOpen} onOpenChange={handleOpenChange}>
 					<DrawerContent>
 						<DrawerHeader>
 							<DrawerTitle>Novo item</DrawerTitle>
@@ -101,7 +91,7 @@ export default function Header({
 					</DrawerContent>
 				</Drawer>
 			) : (
-				<Dialog open={isOpen} onOpenChange={setIsOpen} modal>
+				<Dialog open={isOpen} onOpenChange={handleOpenChange} modal>
 					<DialogContent className="sm:max-w-[425px]">
 						<DialogHeader>
 							<DialogTitle>Novo item</DialogTitle>

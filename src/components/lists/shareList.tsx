@@ -1,11 +1,11 @@
 "use client"
-import React from "react";
+import React, { useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { shareList, type ListWithItems } from "@/services/lists";
+import { shareList } from "@/services/lists";
+import type { ListSummary } from "@/types/list";
 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 
@@ -14,7 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Label } from "@radix-ui/react-label";
+import { Label } from "@/components/ui/label";
 
 
 const formSchema = z.object({
@@ -22,10 +22,10 @@ const formSchema = z.object({
     isPublic: z.boolean()
 })
 
-export function ShareList({ item }: { item?: ListWithItems }) {
+export function ShareList({ item }: { item?: ListSummary }) {
     const isMobile = useIsMobile()
     const [isOpen, setIsOpen] = React.useState(false);
-    const [isLoading, setIsLoading] = React.useState(false);
+    const [isLoading, startSharing] = useTransition();
     const [isSuccess, setIsSuccess] = React.useState(false);
 
     const form = useForm<z.infer<typeof formSchema>>({
@@ -36,16 +36,16 @@ export function ShareList({ item }: { item?: ListWithItems }) {
         },
     })
 
-    async function onSubmit(values: z.infer<typeof formSchema>) {
-        setIsLoading(true)
-        await shareList(values.id, values.isPublic)
-        navigator.clipboard.writeText(`${window.location.origin}/app/${values.id}?share=true`)
-        setIsLoading(false)
-        setIsSuccess(true)
-        setTimeout(() => {
-            setIsOpen(false)
-            setIsSuccess(false)
-        }, 2000)
+    function onSubmit(values: z.infer<typeof formSchema>) {
+        startSharing(async () => {
+            await shareList(values.id, values.isPublic)
+            navigator.clipboard.writeText(`${window.location.origin}/app/${values.id}?share=true`)
+            setIsSuccess(true)
+            setTimeout(() => {
+                setIsOpen(false)
+                setIsSuccess(false)
+            }, 2000)
+        })
     }
 
     return (
