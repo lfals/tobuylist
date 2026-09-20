@@ -43,3 +43,11 @@ _Avoid_: Author, admin
 **Visitor**:
 Someone opening a share link who does not own the list.
 _Avoid_: Guest, shared user
+
+**List relationship**:
+Who the current user is to a list: owner, visitor, or saved. Taken from ownership and bookmark, not from the URL.
+_Avoid_: Role, permission, access mode
+
+**List total**:
+The sum, in cents, of every active item on a list (price × quantity).
+_Avoid_: Subtotal, cart total, value
