@@ -8,7 +8,7 @@ export const formSchema = z.object({
     store: z.string(),
     imageUrl: z.string(),
     price: z.string().transform((val) => {
-        return String(val).replace(/[^\d.,]/g, '').replace(',', '').replace('.', '')
+        return String(val).replace(/\D/g, "")
     }),
     quantity: z.string().refine((val) => {
         return Number(val) > 0

@@ -2,6 +2,7 @@
 
 import db from "@/db/drizzle"
 import { listItemInsertSchema, listItemsTable } from "@/db/schema"
+import { storeFromUrl } from "@/lib/storeFromUrl"
 import { eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
@@ -76,7 +77,7 @@ export const createListItem = async (listId: string, data: z.infer<typeof listIt
 
 
     if (data.link && !data.store) {
-        data.store = new URL(data.link).hostname
+        data.store = storeFromUrl(data.link)
     }
 
     console.log(data.imageUrl)
@@ -103,7 +104,7 @@ export const deleteListItem = async (item: any) => {
 export const editListItem = async (listId: string, data: z.infer<typeof listItemInsertSchema>) => {
 
     if (data.link && !data.store) {
-        data.store = new URL(data.link).hostname.replace("www.", "").split(".")[0]
+        data.store = storeFromUrl(data.link)
     }
 
 
