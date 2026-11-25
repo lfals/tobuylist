@@ -2,7 +2,7 @@
 
 import db from "@/db/drizzle"
 import { listItemInsertSchema, listItemsTable } from "@/db/schema"
-import { requireUserId } from "@/lib/current-user"
+import { requireSignedIn, requireUserId } from "@/lib/current-user"
 import { storeFromUrl } from "@/lib/storeFromUrl"
 import { assertCanEditItems, assertCanEditList, revalidateList } from "@/services/list-access"
 import { eq } from "drizzle-orm"
@@ -68,6 +68,7 @@ function setCachedImage(key: string, url: string) {
 }
 
 export async function getItemImage(params: string, next?: boolean) {
+    await requireSignedIn()
     const key = imageCacheKey(params, next)
     const cached = getCachedImage(key)
     if (cached !== undefined) {
