@@ -50,6 +50,18 @@ export default {
 					'4': 'hsl(var(--chart-4))',
 					'5': 'hsl(var(--chart-5))'
 				},
+				lp: {
+					bg: 'hsl(var(--lp-bg))',
+					surface: 'hsl(var(--lp-surface))',
+					sunken: 'hsl(var(--lp-sunken))',
+					ink: 'hsl(var(--lp-ink))',
+					muted: 'hsl(var(--lp-muted))',
+					line: 'hsl(var(--lp-line))',
+					accent: 'hsl(var(--lp-accent))',
+					'accent-ink': 'hsl(var(--lp-accent-ink))',
+					'accent-text': 'hsl(var(--lp-accent-text))',
+					'accent-soft': 'hsl(var(--lp-accent-soft))'
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
@@ -61,12 +73,21 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				}
 			},
+			fontFamily: {
+				display: ['var(--font-landing-display)', 'Georgia', 'serif'],
+				hand: ['var(--font-landing-hand)', 'cursive'],
+				landing: ['var(--font-landing-body)', 'ui-sans-serif', 'system-ui', 'sans-serif']
+			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
 			},
 			keyframes: {
+				rise: {
+					from: { opacity: '0', transform: 'translateY(12px)' },
+					to: { opacity: '1', transform: 'translateY(0)' }
+				},
 				'accordion-down': {
 					from: {
 						height: '0'
@@ -85,6 +106,7 @@ export default {
 				}
 			},
 			animation: {
+				rise: 'rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both',
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out'
 			}

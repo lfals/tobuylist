@@ -88,6 +88,34 @@ body {
   }
 }
 
+/* Landing page: paleta própria (papel cinza-quente, tinta e laranja), isolada do tema do app. */
+@layer base {
+  .landing {
+    --lp-bg: 43 20% 94%;
+    --lp-surface: 43 30% 97%;
+    --lp-sunken: 42 15% 89%;
+    --lp-ink: 40 9% 8%;
+    --lp-muted: 43 7% 38%;
+    --lp-line: 40 12% 80%;
+    --lp-accent: 14 90% 46%;
+    --lp-accent-ink: 0 0% 100%;
+    --lp-accent-text: 14 85% 37%;
+    --lp-accent-soft: 14 80% 91%;
+  }
+  .dark .landing {
+    --lp-bg: 40 9% 8%;
+    --lp-surface: 40 8% 11%;
+    --lp-sunken: 40 8% 14%;
+    --lp-ink: 43 20% 94%;
+    --lp-muted: 43 8% 67%;
+    --lp-line: 40 6% 23%;
+    --lp-accent: 14 95% 58%;
+    --lp-accent-ink: 40 9% 8%;
+    --lp-accent-text: 14 95% 68%;
+    --lp-accent-soft: 14 40% 18%;
+  }
+}
+
 @layer base {
   * {
     @apply border-border;
