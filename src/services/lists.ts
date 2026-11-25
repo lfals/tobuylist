@@ -3,6 +3,7 @@
 import db from "@/db/drizzle";
 import { listItemsTable, listsTable, sharedListsTable } from "@/db/schema";
 import { requireUserId } from "@/lib/current-user";
+import { getListAccess, revalidateList } from "@/services/list-access";
 import { getListDetails, getSharedList } from "@/services/lists-queries";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -69,15 +70,24 @@ export async function duplicateList(listId: string) {
 export async function shareList(listId: string, isPublic: boolean) {
     const userId = await requireUserId()
     await db.update(listsTable).set({ public: isPublic ? 1 : 0, shared: 1 }).where(and(eq(listsTable.id, listId), eq(listsTable.userId, userId)))
-    revalidatePath(`/app/${listId}`)
+    revalidateList(listId)
     revalidatePath(`/app`)
 }
 
 export async function saveList(listId: string) {
     const userId = await requireUserId()
-    await db.insert(sharedListsTable).values({ id: randomUUID(), listId, userId })
+    const access = await getListAccess(listId, userId)
 
-    revalidatePath(`/app/${listId}`)
+    if (!access) {
+        redirect('/app')
+    }
+    if (access === "owner") {
+        redirect(`/app/${listId}`)
+    }
+    if (access === "link") {
+        await db.insert(sharedListsTable).values({ id: randomUUID(), listId, userId })
+    }
+
     revalidatePath(`/app`)
     revalidatePath(`/app/${listId}/shared`)
     redirect(`/app/${listId}/shared`)

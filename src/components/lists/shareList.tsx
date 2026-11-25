@@ -32,14 +32,14 @@ export function ShareList({ item }: { item?: ListSummary }) {
         resolver: zodResolver(formSchema),
         defaultValues: {
             id: item?.id,
-            isPublic: false
+            isPublic: Boolean(item?.public)
         },
     })
 
     function onSubmit(values: z.infer<typeof formSchema>) {
         startSharing(async () => {
             await shareList(values.id, values.isPublic)
-            navigator.clipboard.writeText(`${window.location.origin}/app/${values.id}?share=true`)
+            navigator.clipboard.writeText(`${window.location.origin}/s/${values.id}`)
             setIsSuccess(true)
             setTimeout(() => {
                 setIsOpen(false)
@@ -58,7 +58,7 @@ export function ShareList({ item }: { item?: ListSummary }) {
                             <DrawerHeader>
                                 <DrawerTitle>Compartilhar lista</DrawerTitle>
                                 <DrawerDescription>
-                                    Compartilhe a lista com outros usuários para que eles possam ver e adicionar itens à lista.
+                                    Qualquer pessoa com o link pode ver a lista, sem precisar de conta.
                                 </DrawerDescription>
                             </DrawerHeader>
                             <Form {...form}>
@@ -69,7 +69,7 @@ export function ShareList({ item }: { item?: ListSummary }) {
                                         name="isPublic"
                                         render={({ field }) => (
                                             <FormItem className="flex flex-col">
-                                                <FormLabel>Permitir que outros usuários alterem a lista</FormLabel>
+                                                <FormLabel>Permitir que quem estiver logado também edite a lista</FormLabel>
                                                 <FormControl>
                                                     <div className="flex items-center space-x-2">
                                                         <Switch checked={field.value}
@@ -101,7 +101,7 @@ export function ShareList({ item }: { item?: ListSummary }) {
                             <DialogHeader>
                                 <DialogTitle>Compartilhar lista</DialogTitle>
                                 <DialogDescription>
-                                    Compartilhe a lista com outros usuários para que eles possam ver e adicionar itens à lista.
+                                    Qualquer pessoa com o link pode ver a lista, sem precisar de conta.
                                 </DialogDescription>
                             </DialogHeader>
                             <Form {...form}>
@@ -112,7 +112,7 @@ export function ShareList({ item }: { item?: ListSummary }) {
                                         name="isPublic"
                                         render={({ field }) => (
                                             <FormItem className="flex flex-col">
-                                                <FormLabel>Permitir que outros usuários alterem a lista</FormLabel>
+                                                <FormLabel>Permitir que quem estiver logado também edite a lista</FormLabel>
                                                 <FormControl>
                                                     <div className="flex items-center space-x-2">
                                                         <Switch checked={field.value}

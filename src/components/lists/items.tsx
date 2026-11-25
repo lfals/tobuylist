@@ -78,7 +78,7 @@ export default function Items({
 		onEdit: setEditingItem,
 		onDelete: setDeletingItem,
 		onMark: handleMark,
-		onImageError: showImage ? handleImageError : undefined,
+		onImageError: showImage && canEdit ? handleImageError : undefined,
 	}
 
 	return (

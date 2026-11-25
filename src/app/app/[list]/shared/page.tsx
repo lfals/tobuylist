@@ -10,7 +10,7 @@ async function SharedListHeader({ listId }: { listId: string }) {
     if (!list) {
         redirect("/app")
     }
-    return <SharedHeader list={list} />
+    return <SharedHeader list={list} canAdd={Boolean(list.public)} />
 }
 
 async function SharedListItems({ listId }: { listId: string }) {

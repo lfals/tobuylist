@@ -4,8 +4,8 @@ import db from "@/db/drizzle"
 import { listItemInsertSchema, listItemsTable } from "@/db/schema"
 import { requireUserId } from "@/lib/current-user"
 import { storeFromUrl } from "@/lib/storeFromUrl"
+import { assertCanEditItems, assertCanEditList, revalidateList } from "@/services/list-access"
 import { eq } from "drizzle-orm"
-import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
 export type Root = {
@@ -105,7 +105,8 @@ export async function getItemImage(params: string, next?: boolean) {
 }
 
 export const createListItem = async (listId: string, data: z.infer<typeof listItemInsertSchema>) => {
-    await requireUserId()
+    const userId = await requireUserId()
+    await assertCanEditList(listId, userId)
 
     if (data.link && !data.store) {
         data.store = storeFromUrl(data.link)
@@ -118,35 +119,40 @@ export const createListItem = async (listId: string, data: z.infer<typeof listIt
 
     const listItem = await db.insert(listItemsTable).values({ ...data, price: Number(data.price), listId }).returning()
 
-    revalidatePath(`/app/${listId}`)
+    revalidateList(listId)
     return listItem
 }
 
 
 export const deleteListItem = async (item: { id: number; listId: string }) => {
-    await requireUserId()
+    const userId = await requireUserId()
+    const lists = await assertCanEditItems([item.id], userId)
     await db.delete(listItemsTable).where(eq(listItemsTable.id, item.id))
-    revalidatePath(`/app/${item.listId}`)
+    revalidateList(lists.get(item.id) ?? item.listId)
 }
 
 
 export const editListItem = async (listId: string, data: z.infer<typeof listItemInsertSchema>) => {
-    await requireUserId()
+    const userId = await requireUserId()
+    // O `listId` vem do cliente, então a lista real é sempre a do item gravado no banco.
+    const lists = await assertCanEditItems([data.id!], userId)
+    const realListId = lists.get(data.id!) ?? listId
 
     if (data.link && !data.store) {
         data.store = storeFromUrl(data.link)
     }
 
-    const listItem = await db.update(listItemsTable).set({ ...data, price: Number(String(data.price).replace("R$ ", "").replace(",", "").replace(".", "")) }).where(eq(listItemsTable.id, data.id!)).returning()
+    const listItem = await db.update(listItemsTable).set({ ...data, listId: realListId, price: Number(String(data.price).replace("R$ ", "").replace(",", "").replace(".", "")) }).where(eq(listItemsTable.id, data.id!)).returning()
 
-    revalidatePath(`/app/${listId}`)
+    revalidateList(realListId)
     return listItem
 }
 
 export const markListItem = async (listId: string, itemId: number, isActive: number) => {
-    await requireUserId()
+    const userId = await requireUserId()
+    const lists = await assertCanEditItems([itemId], userId)
     await db.update(listItemsTable).set({ isActive }).where(eq(listItemsTable.id, itemId))
-    revalidatePath(`/app/${listId}`)
+    revalidateList(lists.get(itemId) ?? listId)
 }
 
 export const reorderListItem = async (items: { id: number; order: number }[]) => {
@@ -154,11 +160,16 @@ export const reorderListItem = async (items: { id: number; order: number }[]) =>
         return
     }
 
-    await requireUserId()
+    const userId = await requireUserId()
+    const lists = await assertCanEditItems(items.map((item) => item.id), userId)
 
     await Promise.all(
         items.map((item) =>
             db.update(listItemsTable).set({ order: item.order }).where(eq(listItemsTable.id, item.id))
         )
     )
+
+    for (const listId of new Set(lists.values())) {
+        revalidateList(listId)
+    }
 }

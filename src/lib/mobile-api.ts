@@ -72,7 +72,7 @@ export type ResolvedList = {
  * Resolve como o usuário enxerga a lista:
  * - owner: lista própria (edição total)
  * - saved: lista de outra pessoa salva pelo usuário (edita itens só se for pública)
- * - link: lista compartilhada acessada via link, ainda não salva (somente leitura)
+ * - link: lista compartilhada acessada via link, ainda não salva (edita itens só se for pública)
  */
 export async function resolveList(listId: string, userId: string): Promise<ResolvedList | null> {
 	const [list] = await db.select().from(listsTable).where(eq(listsTable.id, listId)).limit(1)
@@ -98,7 +98,7 @@ export async function resolveList(listId: string, userId: string): Promise<Resol
 		return { list, access: "saved", canEdit: Boolean(list.public) }
 	}
 
-	return { list, access: "link", canEdit: false }
+	return { list, access: "link", canEdit: Boolean(list.public) }
 }
 
 export async function requireList(listId: string, userId: string) {
@@ -146,5 +146,5 @@ export function parseId(value: string, label = "id") {
 
 export function shareUrl(request: Request, listId: string) {
 	const origin = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin
-	return `${origin}/app/${listId}?share=true`
+	return `${origin}/s/${listId}`
 }

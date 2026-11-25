@@ -15,16 +15,9 @@ import type { z } from "zod"
 import EditList from "./editList"
 import { emptyItemFormValues, formSchema } from "./formSchema"
 import { NewItemForm } from "./item-form"
-import { SaveList } from "./saveList"
 import { ShareList } from "./shareList"
 
-export default function Header({
-	list,
-	isShared,
-}: {
-	list: ListSummary
-	isShared: boolean
-}) {
+export default function Header({ list }: { list: ListSummary }) {
 	const [isOpen, setIsOpen] = useState(false)
 	const [isSaving, startSaving] = useTransition()
 	const isMobile = useIsMobile()
@@ -62,15 +55,9 @@ export default function Header({
 					<p className="text-sm text-gray-500">{list.description}</p>
 				</div>
 				<div className="flex items-center gap-2">
-					{isShared ? (
-						<SaveList isPublic={Boolean(list.public)} listId={list.id} />
-					) : (
-						<>
-							<ShareList item={list} />
-							<Button type="button" onClick={() => setIsOpen(true)}>Adicionar</Button>
-							<EditList item={list} />
-						</>
-					)}
+					<ShareList item={list} />
+					<Button type="button" onClick={() => setIsOpen(true)}>Adicionar</Button>
+					<EditList item={list} />
 				</div>
 			</div>
 			{isMobile ? (
