@@ -4,6 +4,7 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "@/components/theme-provider";
 import { DeferredMetrics } from "@/components/deferred-metrics";
+import { siteConfig } from "@/lib/site";
 
 const geistSans = localFont({
 	src: "./fonts/GeistVF.woff",
@@ -17,8 +18,13 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-	title: "To Buy List",
-	description: "Your shopping list for everything",
+	metadataBase: new URL(siteConfig.url),
+	title: {
+		default: siteConfig.name,
+		template: `%s | ${siteConfig.name}`,
+	},
+	description: siteConfig.description,
+	applicationName: siteConfig.name,
 };
 
 export default function RootLayout({
@@ -27,7 +33,7 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en" suppressHydrationWarning>
+		<html lang="pt-BR" suppressHydrationWarning>
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} antialiased  bg-gray-100 dark:bg-neutral-950`}
 			>
