@@ -1,46 +1,57 @@
+import { landingPath, type Locale } from "@/i18n/routing"
 import { siteConfig } from "@/lib/site"
-import { faqs, features } from "./content"
+import { getTranslations } from "next-intl/server"
+import { getLandingContent } from "./content"
 
 // Dados estruturados que buscadores e assistentes de IA leem para entender o produto.
 // Só afirma o que a página já diz; não inclui preço porque o app não o publica.
-const graph = {
-	"@context": "https://schema.org",
-	"@graph": [
-		{
-			"@type": "WebSite",
-			"@id": `${siteConfig.url}/#website`,
-			url: siteConfig.url,
-			name: siteConfig.name,
-			description: siteConfig.description,
-			inLanguage: siteConfig.locale,
-		},
-		{
-			"@type": "WebApplication",
-			"@id": `${siteConfig.url}/#app`,
-			url: siteConfig.url,
-			name: siteConfig.name,
-			description: siteConfig.description,
-			applicationCategory: "ShoppingApplication",
-			operatingSystem: "Qualquer sistema com navegador web",
-			browserRequirements: "Requer JavaScript",
-			inLanguage: siteConfig.locale,
-			featureList: features.map((feature) => feature.title),
-			isPartOf: { "@id": `${siteConfig.url}/#website` },
-		},
-		{
-			"@type": "FAQPage",
-			"@id": `${siteConfig.url}/#faq`,
-			inLanguage: siteConfig.locale,
-			mainEntity: faqs.map((faq) => ({
-				"@type": "Question",
-				name: faq.question,
-				acceptedAnswer: { "@type": "Answer", text: faq.answer },
-			})),
-		},
-	],
-}
+export async function LandingJsonLd({ locale }: { locale: Locale }) {
+	const [t, meta, { faqs, features }] = await Promise.all([
+		getTranslations({ locale, namespace: "Landing.jsonLd" }),
+		getTranslations({ locale, namespace: "Meta" }),
+		getLandingContent(locale),
+	])
 
-export function LandingJsonLd() {
+	// Uma versão do site por idioma: cada uma tem a própria URL e os próprios ids.
+	const pageUrl = `${siteConfig.url}${landingPath(locale)}`
+
+	const graph = {
+		"@context": "https://schema.org",
+		"@graph": [
+			{
+				"@type": "WebSite",
+				"@id": `${pageUrl}#website`,
+				url: pageUrl,
+				name: siteConfig.name,
+				description: meta("description"),
+				inLanguage: locale,
+			},
+			{
+				"@type": "WebApplication",
+				"@id": `${pageUrl}#app`,
+				url: pageUrl,
+				name: siteConfig.name,
+				description: meta("description"),
+				applicationCategory: "ShoppingApplication",
+				operatingSystem: t("operatingSystem"),
+				browserRequirements: t("browserRequirements"),
+				inLanguage: locale,
+				featureList: features.map((feature) => feature.title),
+				isPartOf: { "@id": `${pageUrl}#website` },
+			},
+			{
+				"@type": "FAQPage",
+				"@id": `${pageUrl}#faq`,
+				inLanguage: locale,
+				mainEntity: faqs.map((faq) => ({
+					"@type": "Question",
+					name: faq.question,
+					acceptedAnswer: { "@type": "Answer", text: faq.answer },
+				})),
+			},
+		],
+	}
+
 	return (
 		<script
 			type="application/ld+json"

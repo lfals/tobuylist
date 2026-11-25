@@ -20,8 +20,11 @@ import { duplicateSharedList, deleteSharedList } from "@/services/lists";
 import { buttonVariants } from "./ui/button";
 import { cn } from "@/lib/utils";
 import type { SidebarList } from "@/types/list";
+import { useTranslations } from "next-intl";
 
 export function SidebarSavedItem({ item }: { item: SidebarList }) {
+    const t = useTranslations("Sidebar")
+    const tCommon = useTranslations("Common")
     const [isOpen, setIsOpen] = useState(false)
 
     return (
@@ -37,8 +40,8 @@ export function SidebarSavedItem({ item }: { item: SidebarList }) {
                                 <MoreVerticalIcon size={16} />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
-                                <DropdownMenuItem className={cn("cursor-pointer")} onClick={() => duplicateSharedList(item.id)}>Duplicar</DropdownMenuItem>
-                                <DropdownMenuItem className={cn("cursor-pointer")} onClick={() => setIsOpen(true)}>Excluir</DropdownMenuItem>
+                                <DropdownMenuItem className={cn("cursor-pointer")} onClick={() => duplicateSharedList(item.id)}>{tCommon("duplicate")}</DropdownMenuItem>
+                                <DropdownMenuItem className={cn("cursor-pointer")} onClick={() => setIsOpen(true)}>{tCommon("delete")}</DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
@@ -47,15 +50,14 @@ export function SidebarSavedItem({ item }: { item: SidebarList }) {
             <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Excluir lista</AlertDialogTitle>
+                        <AlertDialogTitle>{t("deleteSavedList.title")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Esta ação não pode ser desfeita. Isso excluirá permanentemente a lista
-                            compartilhada do seu perfil.
+                            {t("deleteSavedList.description")}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction className={buttonVariants({ variant: "destructive" })} onClick={() => deleteSharedList(item.id)}>Excluir</AlertDialogAction>
+                        <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
+                        <AlertDialogAction className={buttonVariants({ variant: "destructive" })} onClick={() => deleteSharedList(item.id)}>{tCommon("delete")}</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

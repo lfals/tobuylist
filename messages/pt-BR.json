@@ -1,0 +1,283 @@
+{
+  "Common": {
+    "add": "Adicionar",
+    "cancel": "Cancelar",
+    "close": "Fechar",
+    "create": "Criar",
+    "delete": "Excluir",
+    "description": "Descrição",
+    "disable": "Desabilitar",
+    "duplicate": "Duplicar",
+    "edit": "Editar",
+    "enable": "Habilitar",
+    "items": "Itens",
+    "lists": "Listas",
+    "name": "Nome",
+    "save": "Salvar",
+    "signIn": "Entrar",
+    "signUp": "Criar conta",
+    "toggleSidebar": "Alternar barra lateral",
+    "total": "Total"
+  },
+  "Meta": {
+    "title": "To Buy List: listas de compras com preço, link e total",
+    "description": "Monte listas de compras com nome, loja, preço e link de cada item, veja o total na hora e compartilhe a lista com quem vai comprar junto. Funciona no navegador, no celular e no computador.",
+    "landingOgAlt": "To Buy List: anote o que quer comprar e veja quanto vai gastar",
+    "shared": {
+      "notFound": "Lista não encontrada",
+      "descriptionWithText": "{description}. Lista compartilhada no To Buy List.",
+      "description": "Lista compartilhada no To Buy List. Abra o link para ver os itens e o total."
+    }
+  },
+  "Locale": {
+    "label": "Idioma"
+  },
+  "Theme": {
+    "toggle": "Alternar tema",
+    "toggleLanding": "Alternar entre tema claro e escuro",
+    "light": "Claro",
+    "dark": "Escuro",
+    "system": "Sistema"
+  },
+  "Landing": {
+    "skipToContent": "Pular para o conteúdo",
+    "nav": {
+      "label": "Principal",
+      "features": "O que faz",
+      "start": "Como começar",
+      "faq": "Dúvidas"
+    },
+    "signIn": "Entrar",
+    "hero": {
+      "title": "Anote o que quer comprar. Veja quanto vai gastar.",
+      "subtitle": "Experimente agora, sem cadastro ↓"
+    },
+    "featuresSection": {
+      "title": "O que ele faz",
+      "intro": "Nada de planilha. Uma lista que sabe somar, e mais algumas coisas úteis."
+    },
+    "features": [
+      {
+        "title": "Colou o link, ele tenta preencher",
+        "text": "Cole o endereço do produto e o app tenta puxar nome, loja, preço e foto. Algumas lojas não deixam ele ler a página, e aí você digita. Em qualquer caso, dá para conferir antes de salvar."
+      },
+      {
+        "title": "A conta fecha sozinha",
+        "text": "Cada item tem preço e quantidade, e o total da lista aparece no topo. Dá para saber o tamanho do estrago antes de sair de casa."
+      },
+      {
+        "title": "Manda para quem vai comprar junto",
+        "text": "O app gera um link da lista. Você decide se a pessoa só olha ou se também pode mexer nos itens. Quem recebe entra com a própria conta e pode salvar a lista."
+      },
+      {
+        "title": "O mais urgente fica em cima",
+        "text": "Arraste os itens e deixe na ordem em que você pretende comprar."
+      },
+      {
+        "title": "Lista que se repete, a gente duplica",
+        "text": "Compras do mês, material da escola, enxoval: duplique uma lista e ajuste só o que mudou, em vez de refazer tudo."
+      }
+    ],
+    "stepsSection": {
+      "title": "Como começar"
+    },
+    "steps": [
+      {
+        "title": "Dê um nome para a lista",
+        "text": "“Casa nova”, “Presentes de dezembro”, “Viagem de julho”. O que fizer sentido para você."
+      },
+      {
+        "title": "Vá colocando as coisas",
+        "text": "Cole o link do produto ou digite nome, loja, preço e quantidade. Pode ser aos poucos, ao longo dos dias."
+      },
+      {
+        "title": "Olhe o total e compartilhe",
+        "text": "Confira quanto deu, arrume a ordem e, se quiser, mande o link para quem vai ajudar."
+      }
+    ],
+    "useCasesSection": {
+      "title": "Para que serve",
+      "lead": "Serve para"
+    },
+    "useCases": [
+      "o presente de aniversário",
+      "a reforma do banheiro",
+      "as compras do mês",
+      "a viagem das férias",
+      "o material da escola",
+      "aquela lista de desejos que hoje mora no bloco de notas do celular"
+    ],
+    "faqSection": {
+      "title": "Dúvidas comuns"
+    },
+    "faqs": [
+      {
+        "question": "O que é o To Buy List?",
+        "answer": "É um app web, em português, para montar listas de compras. Cada item guarda nome, loja, preço, quantidade, link e imagem, e a lista mostra o total automaticamente."
+      },
+      {
+        "question": "Preciso instalar alguma coisa?",
+        "answer": "Não. Ele funciona direto no navegador, no celular ou no computador. É só clicar em Entrar e usar a sua conta, inclusive a do Google."
+      },
+      {
+        "question": "Como funciona o preenchimento pelo link?",
+        "answer": "Ao colar o link de um produto, o app tenta ler a página da loja e preencher nome, loja, preço e imagem. Nem toda loja permite essa leitura. Quando não der, você preenche na mão e confere os valores antes de salvar."
+      },
+      {
+        "question": "Como compartilho uma lista com outra pessoa?",
+        "answer": "Abra a lista, clique no botão de link e escolha se a outra pessoa pode alterar os itens. O app copia o endereço para você enviar. Quem recebe entra com a própria conta, vê a lista e pode salvá-la."
+      },
+      {
+        "question": "Posso mudar a ordem dos itens?",
+        "answer": "Pode. É só arrastar os itens para colocar primeiro o que é mais importante ou mais urgente."
+      },
+      {
+        "question": "Dá para copiar uma lista que eu já usei?",
+        "answer": "Dá. Use a opção Duplicar no menu da lista para criar uma cópia e ajustar o que mudou."
+      }
+    ],
+    "cta": {
+      "title": "Comece pelo que está na sua cabeça agora.",
+      "button": "Entrar e criar minha lista"
+    },
+    "footerTagline": "Listas de compras com preço, link e total.",
+    "demo": {
+      "formLabel": "Lista de teste: adicione um item",
+      "wantToBuy": "Eu quero comprar",
+      "at": "na",
+      "priceLead": "por R$",
+      "namePlaceholder": "um tênis",
+      "nameLabel": "O que você quer comprar",
+      "storePlaceholder": "loja",
+      "storeLabel": "Em qual loja (opcional)",
+      "pricePlaceholder": "0,00",
+      "priceLabel": "Preço em reais",
+      "example": {
+        "name": "um tênis de corrida",
+        "store": "Esporte Já",
+        "price": "389,00"
+      },
+      "articles": ["um", "uma", "uns", "umas", "o", "a", "os", "as"],
+      "initialItems": [
+        { "name": "Fritadeira elétrica 4 L", "store": "Casas Horizonte" },
+        { "name": "Mochila escolar", "store": "Papelaria Ponto" },
+        { "name": "Caderno 10 matérias", "store": "Papelaria Ponto" }
+      ],
+      "submit": "Adicionar à lista",
+      "orEnter": "ou aperte Enter",
+      "errors": {
+        "name": "Diga o que você quer comprar.",
+        "price": "Coloque um preço, como 389,00.",
+        "limit": "A lista de teste aceita até {max} itens."
+      },
+      "listLabel": "Sua lista de teste",
+      "empty": "A lista está vazia. Preencha a frase acima e adicione o primeiro item.",
+      "markBought": "Marcar {name} como comprado",
+      "remove": "Remover {name}",
+      "totalSoFar": "Total até agora",
+      "totalSoFarWithItems": "Total até agora · {count, plural, =0 {# itens} one {# item} other {# itens}}, {bought, plural, =0 {# já comprados} one {# já comprado} other {# já comprados}}",
+      "disclaimer": "Isto é uma demonstração: a lista de teste não fica salva. Na sua conta, as listas ficam guardadas, e você pode colar o link de um produto para o app tentar preencher loja, preço e foto."
+    },
+    "og": {
+      "wantToBuy": "Eu quero comprar",
+      "item": "um tênis",
+      "priceLead": "por R$",
+      "price": "389,00",
+      "tagline": "Anote o que quer comprar. Veja quanto vai gastar."
+    },
+    "jsonLd": {
+      "operatingSystem": "Qualquer sistema com navegador web",
+      "browserRequirements": "Requer JavaScript"
+    }
+  },
+  "Llms": {
+    "intro": "{name} é um app web em português (pt-BR) para montar listas de compras. Cada item guarda nome, loja, preço, quantidade, link e imagem, e a lista calcula o total sozinha. A área de listas exige login; a página inicial é pública.",
+    "whatItDoes": "O que o app faz",
+    "howToUse": "Como usar",
+    "examples": "Exemplos de uso",
+    "faq": "Perguntas frequentes",
+    "links": "Links",
+    "homeLink": "Página inicial",
+    "homeLinkDescription": "apresentação do app e botão de entrada",
+    "sitemap": "Sitemap"
+  },
+  "Sidebar": {
+    "myLists": "Minhas listas",
+    "noLists": "Nenhuma lista encontrada",
+    "savedLists": "Listas salvas",
+    "listsTitle": "Listas",
+    "newList": {
+      "title": "Nova lista",
+      "description": "Crie uma nova lista de compras."
+    },
+    "deleteList": {
+      "title": "Excluir lista",
+      "description": "Esta ação não pode ser desfeita. Isso excluirá permanentemente sua lista e removerá seus dados do nosso servidor."
+    },
+    "deleteSavedList": {
+      "title": "Excluir lista",
+      "description": "Esta ação não pode ser desfeita. Isso excluirá permanentemente a lista compartilhada do seu perfil."
+    }
+  },
+  "ListForm": {
+    "editTitle": "Editar lista",
+    "namePlaceholder": "Moto",
+    "descriptionPlaceholder": "Peças e acessórios",
+    "errors": {
+      "nameMin": "O nome deve ter pelo menos 2 caracteres.",
+      "nameMax": "O nome pode ter até 50 caracteres.",
+      "nameBlank": "O nome não pode ser apenas espaços em branco",
+      "descriptionMax": "A descrição pode ter até 50 caracteres."
+    }
+  },
+  "Items": {
+    "newTitle": "Novo item",
+    "editTitle": "Editar item",
+    "deleteTitle": "Excluir item",
+    "deleteDescription": "Esta ação não pode ser desfeita. Isso excluirá permanentemente o item de sua lista."
+  },
+  "ItemForm": {
+    "link": "Link",
+    "linkPlaceholder": "https://loja.com.br/produto",
+    "item": "Item",
+    "itemPlaceholder": "Nome do item",
+    "store": "Loja",
+    "storePlaceholder": "Nome da loja",
+    "image": "Imagem",
+    "imagePlaceholder": "https://site.com.br/image.jpg",
+    "price": "Preço",
+    "quantity": "Quantidade",
+    "errors": {
+      "nameMin": "Nome deve ter pelo menos 2 caracteres.",
+      "linkInvalid": "Link deve ser uma URL válida.",
+      "quantityMin": "Quantidade deve ser maior que 0."
+    }
+  },
+  "Share": {
+    "title": "Compartilhar lista",
+    "description": "Qualquer pessoa com o link pode ver a lista, sem precisar de conta.",
+    "allowEdit": "Permitir que quem estiver logado também edite a lista",
+    "yes": "Sim",
+    "no": "Não",
+    "copied": "Link copiado ✅",
+    "submit": "Compartilhar",
+    "saveToMyLists": "Salvar nas minhas listas"
+  },
+  "Dashboard": {
+    "noLists": "Sem listas"
+  },
+  "SharedList": {
+    "notFoundTitle": "Lista não encontrada",
+    "notFoundText": "O link pode estar errado ou o dono deixou de compartilhar esta lista.",
+    "goHome": "Ir para o início",
+    "myLists": "Minhas listas",
+    "guestEditable": "O dono liberou esta lista para edição. Entre na sua conta para adicionar e alterar itens.",
+    "guestReadOnly": "Você está vendo uma lista compartilhada. Entre na sua conta para salvar uma cópia nas suas listas.",
+    "og": {
+      "fallbackName": "Lista compartilhada",
+      "sharedWithYou": "Lista compartilhada com você",
+      "itemCount": "{count, plural, =0 {# itens} one {# item} other {# itens}}",
+      "openLink": "Abra o link para ver"
+    }
+  }
+}

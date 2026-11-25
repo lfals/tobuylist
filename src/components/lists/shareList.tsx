@@ -15,6 +15,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Label } from "@/components/ui/label";
+import { useTranslations } from "next-intl";
 
 
 const formSchema = z.object({
@@ -24,6 +25,7 @@ const formSchema = z.object({
 
 export function ShareList({ item }: { item?: ListSummary }) {
     const isMobile = useIsMobile()
+    const t = useTranslations("Share")
     const [isOpen, setIsOpen] = React.useState(false);
     const [isLoading, startSharing] = useTransition();
     const [isSuccess, setIsSuccess] = React.useState(false);
@@ -56,9 +58,9 @@ export function ShareList({ item }: { item?: ListSummary }) {
                     <Drawer open={isOpen} onOpenChange={setIsOpen} >
                         <DrawerContent>
                             <DrawerHeader>
-                                <DrawerTitle>Compartilhar lista</DrawerTitle>
+                                <DrawerTitle>{t("title")}</DrawerTitle>
                                 <DrawerDescription>
-                                    Qualquer pessoa com o link pode ver a lista, sem precisar de conta.
+                                    {t("description")}
                                 </DrawerDescription>
                             </DrawerHeader>
                             <Form {...form}>
@@ -69,12 +71,12 @@ export function ShareList({ item }: { item?: ListSummary }) {
                                         name="isPublic"
                                         render={({ field }) => (
                                             <FormItem className="flex flex-col">
-                                                <FormLabel>Permitir que quem estiver logado também edite a lista</FormLabel>
+                                                <FormLabel>{t("allowEdit")}</FormLabel>
                                                 <FormControl>
                                                     <div className="flex items-center space-x-2">
                                                         <Switch checked={field.value}
                                                             onCheckedChange={field.onChange} />
-                                                        <Label htmlFor="airplane-mode">{field.value ? "Sim" : "Não"}</Label>
+                                                        <Label htmlFor="airplane-mode">{field.value ? t("yes") : t("no")}</Label>
                                                     </div>
                                                 </FormControl>
                                             </FormItem>
@@ -87,7 +89,7 @@ export function ShareList({ item }: { item?: ListSummary }) {
                                 {isLoading ? (
                                     <Button type="submit" form="share-list-form" disabled={isLoading}><Loader2Icon className="animate-spin" /></Button>
                                 ) : (
-                                    <Button type="submit" form="share-list-form" disabled={isLoading}>{isSuccess ? "Link copiado ✅" : "Compartilhar"}</Button>
+                                    <Button type="submit" form="share-list-form" disabled={isLoading}>{isSuccess ? t("copied") : t("submit")}</Button>
                                 )}
                             </DrawerFooter>
                         </DrawerContent>
@@ -99,9 +101,9 @@ export function ShareList({ item }: { item?: ListSummary }) {
 
                         <DialogContent className="sm:max-w-[425px]" >
                             <DialogHeader>
-                                <DialogTitle>Compartilhar lista</DialogTitle>
+                                <DialogTitle>{t("title")}</DialogTitle>
                                 <DialogDescription>
-                                    Qualquer pessoa com o link pode ver a lista, sem precisar de conta.
+                                    {t("description")}
                                 </DialogDescription>
                             </DialogHeader>
                             <Form {...form}>
@@ -112,12 +114,12 @@ export function ShareList({ item }: { item?: ListSummary }) {
                                         name="isPublic"
                                         render={({ field }) => (
                                             <FormItem className="flex flex-col">
-                                                <FormLabel>Permitir que quem estiver logado também edite a lista</FormLabel>
+                                                <FormLabel>{t("allowEdit")}</FormLabel>
                                                 <FormControl>
                                                     <div className="flex items-center space-x-2">
                                                         <Switch checked={field.value}
                                                             onCheckedChange={field.onChange} />
-                                                        <Label htmlFor="airplane-mode">{field.value ? "Sim" : "Não"}</Label>
+                                                        <Label htmlFor="airplane-mode">{field.value ? t("yes") : t("no")}</Label>
                                                     </div>
                                                 </FormControl>
                                             </FormItem>
@@ -130,7 +132,7 @@ export function ShareList({ item }: { item?: ListSummary }) {
                                 {isLoading ? (
                                     <Button type="submit" form="share-list-form" disabled={isLoading}><Loader2Icon className="animate-spin" /></Button>
                                 ) : (
-                                    <Button type="submit" form="share-list-form" disabled={isLoading}>{isSuccess ? "Link copiado ✅" : "Compartilhar"}</Button>
+                                    <Button type="submit" form="share-list-form" disabled={isLoading}>{isSuccess ? t("copied") : t("submit")}</Button>
                                 )}
                             </DialogFooter>
                         </DialogContent>

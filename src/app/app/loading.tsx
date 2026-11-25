@@ -1,15 +1,18 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { getTranslations } from "next-intl/server";
 
-export default function Loading() {
+export default async function Loading() {
+     const t = await getTranslations("Common");
+
      return (
 		<div className="flex flex-col gap-8">
 			<div className="flex items-center gap-4">
 				<div className="w-32">
-					<h1>Total</h1>
+					<h1>{t("total")}</h1>
                     <Skeleton className="w-full h-8" />
 				</div>
 				<div className="w-32">
-					<h1>Listas</h1>
+					<h1>{t("lists")}</h1>
 					<Skeleton className="w-full h-8" />
 				</div>
 			</div>

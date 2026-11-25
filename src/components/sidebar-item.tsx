@@ -20,8 +20,11 @@ import { deleteList, changeListVisibility, duplicateList } from "@/services/list
 import { buttonVariants } from "./ui/button";
 import { cn } from "@/lib/utils";
 import type { SidebarList } from "@/types/list";
+import { useTranslations } from "next-intl";
 
 export function SidebarItem({ item }: { item: SidebarList }) {
+    const t = useTranslations("Sidebar")
+    const tCommon = useTranslations("Common")
     const [isOpen, setIsOpen] = useState(false)
 
     return (
@@ -37,9 +40,9 @@ export function SidebarItem({ item }: { item: SidebarList }) {
                                 <MoreVerticalIcon size={16} />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
-                                <DropdownMenuItem className={cn("cursor-pointer")} onClick={() => duplicateList(item.id)}>Duplicar</DropdownMenuItem>
-                                <DropdownMenuItem className={cn("cursor-pointer")} onClick={() => changeListVisibility(item.id, item.isActive ? 0 : 1)}>{item.isActive ? "Desabilitar" : "Habilitar"}</DropdownMenuItem>
-                                <DropdownMenuItem className={cn("cursor-pointer")} onClick={() => setIsOpen(true)}>Excluir</DropdownMenuItem>
+                                <DropdownMenuItem className={cn("cursor-pointer")} onClick={() => duplicateList(item.id)}>{tCommon("duplicate")}</DropdownMenuItem>
+                                <DropdownMenuItem className={cn("cursor-pointer")} onClick={() => changeListVisibility(item.id, item.isActive ? 0 : 1)}>{item.isActive ? tCommon("disable") : tCommon("enable")}</DropdownMenuItem>
+                                <DropdownMenuItem className={cn("cursor-pointer")} onClick={() => setIsOpen(true)}>{tCommon("delete")}</DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
@@ -48,15 +51,14 @@ export function SidebarItem({ item }: { item: SidebarList }) {
             <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Excluir lista</AlertDialogTitle>
+                        <AlertDialogTitle>{t("deleteList.title")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Esta ação não pode ser desfeita. Isso excluirá permanentemente sua lista
-                            e removerá seus dados do nosso servidor.
+                            {t("deleteList.description")}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction className={buttonVariants({ variant: "destructive" })} onClick={() => deleteList(item.id)}>Excluir</AlertDialogAction>
+                        <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
+                        <AlertDialogAction className={buttonVariants({ variant: "destructive" })} onClick={() => deleteList(item.id)}>{tCommon("delete")}</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

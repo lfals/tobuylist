@@ -1,0 +1,283 @@
+{
+  "Common": {
+    "add": "Add",
+    "cancel": "Cancel",
+    "close": "Close",
+    "create": "Create",
+    "delete": "Delete",
+    "description": "Description",
+    "disable": "Disable",
+    "duplicate": "Duplicate",
+    "edit": "Edit",
+    "enable": "Enable",
+    "items": "Items",
+    "lists": "Lists",
+    "name": "Name",
+    "save": "Save",
+    "signIn": "Sign in",
+    "signUp": "Create account",
+    "toggleSidebar": "Toggle sidebar",
+    "total": "Total"
+  },
+  "Meta": {
+    "title": "To Buy List: shopping lists with price, link and total",
+    "description": "Build shopping lists with the name, store, price and link of each item, see the total right away and share the list with whoever is buying with you. Works in the browser, on your phone and on your computer.",
+    "landingOgAlt": "To Buy List: write down what you want to buy and see how much you'll spend",
+    "shared": {
+      "notFound": "List not found",
+      "descriptionWithText": "{description}. Shared list on To Buy List.",
+      "description": "Shared list on To Buy List. Open the link to see the items and the total."
+    }
+  },
+  "Locale": {
+    "label": "Language"
+  },
+  "Theme": {
+    "toggle": "Toggle theme",
+    "toggleLanding": "Switch between light and dark theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "Landing": {
+    "skipToContent": "Skip to content",
+    "nav": {
+      "label": "Main",
+      "features": "What it does",
+      "start": "Getting started",
+      "faq": "FAQ"
+    },
+    "signIn": "Sign in",
+    "hero": {
+      "title": "Write down what you want to buy. See how much you'll spend.",
+      "subtitle": "Try it now, no sign-up ↓"
+    },
+    "featuresSection": {
+      "title": "What it does",
+      "intro": "No spreadsheets. A list that knows how to add up, plus a few other useful things."
+    },
+    "features": [
+      {
+        "title": "Paste the link, it tries to fill in the rest",
+        "text": "Paste the product address and the app tries to pull the name, store, price and photo. Some stores don't let it read the page, and then you type it in. Either way, you can check everything before saving."
+      },
+      {
+        "title": "The math does itself",
+        "text": "Each item has a price and a quantity, and the list total sits at the top. You know how bad the damage is before you leave the house."
+      },
+      {
+        "title": "Send it to whoever is buying with you",
+        "text": "The app gives you a link to the list. You decide whether the other person can only look or can also change the items. Whoever receives it signs in with their own account and can save the list."
+      },
+      {
+        "title": "The most urgent stays on top",
+        "text": "Drag the items into the order you plan to buy them."
+      },
+      {
+        "title": "A list that repeats? We duplicate it",
+        "text": "Monthly groceries, school supplies, a new home: duplicate a list and adjust only what changed instead of starting over."
+      }
+    ],
+    "stepsSection": {
+      "title": "Getting started"
+    },
+    "steps": [
+      {
+        "title": "Give the list a name",
+        "text": "“New house”, “December gifts”, “July trip”. Whatever makes sense to you."
+      },
+      {
+        "title": "Start adding things",
+        "text": "Paste the product link or type the name, store, price and quantity. You can do it little by little, over several days."
+      },
+      {
+        "title": "Check the total and share",
+        "text": "See how much it came to, fix the order and, if you want, send the link to whoever is helping."
+      }
+    ],
+    "useCasesSection": {
+      "title": "What it's for",
+      "lead": "Good for"
+    },
+    "useCases": [
+      "a birthday present",
+      "the bathroom remodel",
+      "the monthly groceries",
+      "the vacation trip",
+      "school supplies",
+      "that wish list that now lives in your phone's notes app"
+    ],
+    "faqSection": {
+      "title": "Common questions"
+    },
+    "faqs": [
+      {
+        "question": "What is To Buy List?",
+        "answer": "It's a web app for building shopping lists. Each item keeps a name, store, price, quantity, link and image, and the list shows the total automatically."
+      },
+      {
+        "question": "Do I need to install anything?",
+        "answer": "No. It works right in the browser, on your phone or your computer. Just click Sign in and use your account, including your Google one."
+      },
+      {
+        "question": "How does filling in from a link work?",
+        "answer": "When you paste a product link, the app tries to read the store's page and fill in the name, store, price and image. Not every store allows that. When it doesn't work, you fill it in by hand and check the values before saving."
+      },
+      {
+        "question": "How do I share a list with someone else?",
+        "answer": "Open the list, click the link button and choose whether the other person can change the items. The app copies the address for you to send. Whoever receives it signs in with their own account, sees the list and can save it."
+      },
+      {
+        "question": "Can I change the order of the items?",
+        "answer": "Yes. Just drag the items to put the most important or most urgent ones first."
+      },
+      {
+        "question": "Can I copy a list I already used?",
+        "answer": "Yes. Use the Duplicate option in the list menu to make a copy and adjust what changed."
+      }
+    ],
+    "cta": {
+      "title": "Start with whatever is on your mind right now.",
+      "button": "Sign in and create my list"
+    },
+    "footerTagline": "Shopping lists with price, link and total.",
+    "demo": {
+      "formLabel": "Try-out list: add an item",
+      "wantToBuy": "I want to buy",
+      "at": "at",
+      "priceLead": "for R$",
+      "namePlaceholder": "some sneakers",
+      "nameLabel": "What you want to buy",
+      "storePlaceholder": "store",
+      "storeLabel": "Which store (optional)",
+      "pricePlaceholder": "0,00",
+      "priceLabel": "Price in Brazilian reais",
+      "example": {
+        "name": "some running shoes",
+        "store": "Sport Now",
+        "price": "389,00"
+      },
+      "articles": ["a", "an", "the", "some"],
+      "initialItems": [
+        { "name": "Electric air fryer 4 L", "store": "Casas Horizonte" },
+        { "name": "School backpack", "store": "Papelaria Ponto" },
+        { "name": "10-subject notebook", "store": "Papelaria Ponto" }
+      ],
+      "submit": "Add to the list",
+      "orEnter": "or press Enter",
+      "errors": {
+        "name": "Tell us what you want to buy.",
+        "price": "Enter a price, like 389,00.",
+        "limit": "The try-out list takes up to {max} items."
+      },
+      "listLabel": "Your try-out list",
+      "empty": "The list is empty. Fill in the sentence above and add the first item.",
+      "markBought": "Mark {name} as bought",
+      "remove": "Remove {name}",
+      "totalSoFar": "Total so far",
+      "totalSoFarWithItems": "Total so far · {count, plural, one {# item} other {# items}}, {bought} already bought",
+      "disclaimer": "This is a demo: the try-out list isn't saved. In your account, lists are kept, and you can paste a product link so the app tries to fill in the store, price and photo."
+    },
+    "og": {
+      "wantToBuy": "I want to buy",
+      "item": "some sneakers",
+      "priceLead": "for R$",
+      "price": "389,00",
+      "tagline": "Write down what you want to buy. See how much you'll spend."
+    },
+    "jsonLd": {
+      "operatingSystem": "Any system with a web browser",
+      "browserRequirements": "Requires JavaScript"
+    }
+  },
+  "Llms": {
+    "intro": "{name} is a web app for building shopping lists, available in Portuguese and English. Each item keeps a name, store, price, quantity, link and image, and the list works out the total on its own. The lists area requires sign-in; the home page is public. Prices are in Brazilian reais (BRL).",
+    "whatItDoes": "What the app does",
+    "howToUse": "How to use it",
+    "examples": "Example uses",
+    "faq": "Frequently asked questions",
+    "links": "Links",
+    "homeLink": "Home page",
+    "homeLinkDescription": "overview of the app and the sign-in button",
+    "sitemap": "Sitemap"
+  },
+  "Sidebar": {
+    "myLists": "My lists",
+    "noLists": "No lists found",
+    "savedLists": "Saved lists",
+    "listsTitle": "Lists",
+    "newList": {
+      "title": "New list",
+      "description": "Create a new shopping list."
+    },
+    "deleteList": {
+      "title": "Delete list",
+      "description": "This action cannot be undone. It will permanently delete your list and remove its data from our server."
+    },
+    "deleteSavedList": {
+      "title": "Delete list",
+      "description": "This action cannot be undone. It will permanently remove the shared list from your profile."
+    }
+  },
+  "ListForm": {
+    "editTitle": "Edit list",
+    "namePlaceholder": "Motorcycle",
+    "descriptionPlaceholder": "Parts and accessories",
+    "errors": {
+      "nameMin": "The name must be at least 2 characters long.",
+      "nameMax": "The name can be up to 50 characters long.",
+      "nameBlank": "The name can't be only blank spaces",
+      "descriptionMax": "The description can be up to 50 characters long."
+    }
+  },
+  "Items": {
+    "newTitle": "New item",
+    "editTitle": "Edit item",
+    "deleteTitle": "Delete item",
+    "deleteDescription": "This action cannot be undone. It will permanently delete the item from your list."
+  },
+  "ItemForm": {
+    "link": "Link",
+    "linkPlaceholder": "https://store.com/product",
+    "item": "Item",
+    "itemPlaceholder": "Item name",
+    "store": "Store",
+    "storePlaceholder": "Store name",
+    "image": "Image",
+    "imagePlaceholder": "https://site.com/image.jpg",
+    "price": "Price",
+    "quantity": "Quantity",
+    "errors": {
+      "nameMin": "Name must be at least 2 characters long.",
+      "linkInvalid": "Link must be a valid URL.",
+      "quantityMin": "Quantity must be greater than 0."
+    }
+  },
+  "Share": {
+    "title": "Share list",
+    "description": "Anyone with the link can see the list, no account needed.",
+    "allowEdit": "Let anyone who is signed in edit the list too",
+    "yes": "Yes",
+    "no": "No",
+    "copied": "Link copied ✅",
+    "submit": "Share",
+    "saveToMyLists": "Save to my lists"
+  },
+  "Dashboard": {
+    "noLists": "No lists yet"
+  },
+  "SharedList": {
+    "notFoundTitle": "List not found",
+    "notFoundText": "The link may be wrong, or the owner stopped sharing this list.",
+    "goHome": "Go to the home page",
+    "myLists": "My lists",
+    "guestEditable": "The owner opened this list for editing. Sign in to add and change items.",
+    "guestReadOnly": "You're viewing a shared list. Sign in to save a copy to your lists.",
+    "og": {
+      "fallbackName": "Shared list",
+      "sharedWithYou": "List shared with you",
+      "itemCount": "{count, plural, one {# item} other {# items}}",
+      "openLink": "Open the link to see"
+    }
+  }
+}

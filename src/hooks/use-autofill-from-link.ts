@@ -5,10 +5,7 @@ import { fetchProductFromLink } from "@/services/productFromLink"
 import { formatNumber } from "@/lib/format-number"
 import { useEffect, useRef, useState } from "react"
 import type { UseFormReturn } from "react-hook-form"
-import type { z } from "zod"
-import type { formSchema } from "@/components/lists/formSchema"
-
-type ItemFormValues = z.infer<typeof formSchema>
+import type { ItemFormValues } from "@/components/lists/formSchema"
 
 export function useAutofillFromLink(form: UseFormReturn<ItemFormValues>, isOpen: boolean) {
 	const link = form.watch("link")

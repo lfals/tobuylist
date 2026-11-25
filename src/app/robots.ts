@@ -25,7 +25,7 @@ export default function robots(): MetadataRoute.Robots {
 	return {
 		rules: [
 			{ userAgent: "*", allow: "/", disallow: privateAreas },
-			{ userAgent: aiCrawlers, allow: ["/", "/llms.txt"], disallow: privateAreas },
+			{ userAgent: aiCrawlers, allow: ["/", "/llms.txt", "/en/llms.txt"], disallow: privateAreas },
 		],
 		sitemap: `${siteConfig.url}/sitemap.xml`,
 	}

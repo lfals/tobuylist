@@ -1,15 +1,18 @@
 import { Button } from "@/components/ui/button"
-import Link from "next/link"
+import { Link } from "@/i18n/navigation"
+import { getTranslations } from "next-intl/server"
 
-export default function SharedListNotFound() {
+export default async function SharedListNotFound() {
+	const t = await getTranslations("SharedList")
+
 	return (
 		<div className="flex flex-col items-start gap-4 py-10">
-			<h1 className="text-3xl font-bold">Lista não encontrada</h1>
+			<h1 className="text-3xl font-bold">{t("notFoundTitle")}</h1>
 			<p className="text-muted-foreground">
-				O link pode estar errado ou o dono deixou de compartilhar esta lista.
+				{t("notFoundText")}
 			</p>
 			<Button asChild>
-				<Link href="/">Ir para o início</Link>
+				<Link href="/">{t("goHome")}</Link>
 			</Button>
 		</div>
 	)

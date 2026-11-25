@@ -43,6 +43,7 @@
 | Database | [Turso](https://turso.tech) (libSQL) with [Drizzle ORM](https://orm.drizzle.team) |
 | UI | Tailwind CSS, [shadcn/ui](https://ui.shadcn.com) on Radix primitives, Framer Motion, Sonner, Vaul |
 | Forms and validation | React Hook Form, Zod |
+| Internationalization | [next-intl](https://next-intl.dev) (Portuguese and English) |
 | Hosting | Vercel (with Analytics and Speed Insights) |
 
 ## Running it yourself
@@ -116,6 +117,7 @@ The easiest path is [Vercel](https://vercel.com/new): import the repository, add
 | `pnpm dev` | Start the dev server (Turbopack) |
 | `pnpm build` | Production build |
 | `pnpm start` | Serve the production build |
+| `pnpm i18n:check` | Check that every language in `messages/` has the same keys and placeholders |
 | `pnpm db:generate` | Generate Drizzle migrations from the schema |
 | `pnpm db:migrate` | Apply migrations to the database |
 | `pnpm db:studio` | Open Drizzle Studio |
@@ -125,19 +127,37 @@ The easiest path is [Vercel](https://vercel.com/new): import the repository, add
 ```
 src/
 ├── app/
-│   ├── page.tsx           # Public landing page
+│   ├── [locale]/          # Public landing page (/ and /en) and llms.txt per language
+│   ├── og/[locale]/       # Open Graph image of the landing page, per language
 │   ├── app/               # Signed-in area: your lists and items
 │   ├── s/[list]/          # Public view of a shared list
 │   ├── api/mobile/        # REST API for the mobile app
-│   └── llms.txt/          # Plain-text summary for LLMs, plus robots and sitemap
+│   └── robots.ts, sitemap.ts
 ├── components/
 │   ├── landing/           # Landing page and its live demo list
 │   ├── lists/             # List, item cards, dialogs and forms
 │   └── ui/                # shadcn/ui primitives
 ├── db/                    # Drizzle client and schema
+├── i18n/                  # Locales, routing, locale detection (next-intl)
 ├── services/              # Server-side logic for lists, items and access checks
 └── lib/                   # Helpers (product parsing, money formatting, etc.)
 ```
+
+## Languages
+
+The interface is available in Brazilian Portuguese (default) and English, using [next-intl](https://next-intl.dev). All text lives in `messages/<locale>.json`.
+
+- The **landing page** has the language in the URL (`/` is Portuguese, `/en` is English) so each version can be indexed on its own. It has its own `llms.txt`, sitemap entry and Open Graph image.
+- The **signed-in area** and **shared lists** (`/s/[id]`) keep the same URL in every language. The language comes from the `NEXT_LOCALE` cookie (set by the language switcher) and falls back to the browser's `Accept-Language`.
+- Prices are always in Brazilian reais (BRL), formatted the Brazilian way, whatever the interface language.
+- The mobile API (`/api/mobile`) still answers in Portuguese.
+
+To add a language (for example `es`):
+
+1. Add the code to `locales` and `localeMeta` in `src/i18n/routing.ts`.
+2. Copy `messages/en.json` to `messages/es.json` and translate it.
+3. Add the matching Clerk strings in `src/i18n/clerk.ts` (from `@clerk/localizations`).
+4. Run `pnpm i18n:check`.
 
 ## Mobile API
 

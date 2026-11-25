@@ -6,7 +6,6 @@ import { HomeIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
 import Link from 'next/link'
 
-import { z } from "zod"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,18 +15,17 @@ import { createList } from "@/services/lists";
 import { redirect } from "next/navigation";
 import { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from "./ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
-
-const formSchema = z.object({
-    name: z.string().min(2).max(50).refine((value) => value.trim() !== "", {
-        message: "O nome não pode ser apenas espaços em branco",
-    }),
-    description: z.string().max(50).optional(),
-})
+import { useTranslations } from "next-intl";
+import { useListFormSchema, type ListFormValues } from "@/components/lists/list-form-schema";
 
 export function SidebarHeaderItem() {
     const [isOpen, setIsOpen] = useState(false);
     const isMobile = useIsMobile()
-    const form = useForm<z.infer<typeof formSchema>>({
+    const t = useTranslations("Sidebar")
+    const tCommon = useTranslations("Common")
+    const tForm = useTranslations("ListForm")
+    const formSchema = useListFormSchema()
+    const form = useForm<ListFormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             name: "",
@@ -47,7 +45,7 @@ export function SidebarHeaderItem() {
     }
 
 
-    async function onSubmit(values: z.infer<typeof formSchema>) {
+    async function onSubmit(values: ListFormValues) {
 
         const newList = await createList({
             name: values.name,
@@ -66,7 +64,7 @@ export function SidebarHeaderItem() {
             <div className="flex px-2 items-center justify-between gap-2 w-full">
                 <Link href={"/app"} className="flex gap-2 items-center">
                     <HomeIcon size={16} />
-                    <h1 className="text-lg font-semibold">Listas</h1>
+                    <h1 className="text-lg font-semibold">{t("listsTitle")}</h1>
                 </Link>
 
                 <Button size={"icon"} variant={"ghost"} onClick={openAddListModal}>
@@ -80,9 +78,9 @@ export function SidebarHeaderItem() {
                         <Form  {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 p-4" id="add-list-form">
                                 <DrawerHeader>
-                                    <DrawerTitle>Nova lista</DrawerTitle>
+                                    <DrawerTitle>{t("newList.title")}</DrawerTitle>
                                     <DrawerDescription>
-                                        Crie uma nova lista de compras.
+                                        {t("newList.description")}
                                     </DrawerDescription>
                                 </DrawerHeader>
                                 <FormField
@@ -90,9 +88,9 @@ export function SidebarHeaderItem() {
                                     name="name"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Nome</FormLabel>
+                                            <FormLabel>{tCommon("name")}</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Moto" {...field} />
+                                                <Input placeholder={tForm("namePlaceholder")} {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -103,9 +101,9 @@ export function SidebarHeaderItem() {
                                     name="description"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Descrição</FormLabel>
+                                            <FormLabel>{tCommon("description")}</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Peças e acessórios" {...field} />
+                                                <Input placeholder={tForm("descriptionPlaceholder")} {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -114,7 +112,7 @@ export function SidebarHeaderItem() {
 
 
                                 <DrawerFooter>
-                                    <Button type="submit" form="add-list-form">Criar</Button>
+                                    <Button type="submit" form="add-list-form">{tCommon("create")}</Button>
                                 </DrawerFooter>
 
                             </form>
@@ -128,9 +126,9 @@ export function SidebarHeaderItem() {
                         <Form  {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8" id="add-list-form">
                                 <DialogHeader>
-                                    <DialogTitle>Nova lista</DialogTitle>
+                                    <DialogTitle>{t("newList.title")}</DialogTitle>
                                     <DialogDescription>
-                                        Crie uma nova lista de compras.
+                                        {t("newList.description")}
                                     </DialogDescription>
                                 </DialogHeader>
                                 <FormField
@@ -138,9 +136,9 @@ export function SidebarHeaderItem() {
                                     name="name"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Nome</FormLabel>
+                                            <FormLabel>{tCommon("name")}</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Moto" {...field} />
+                                                <Input placeholder={tForm("namePlaceholder")} {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -151,9 +149,9 @@ export function SidebarHeaderItem() {
                                     name="description"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Descrição</FormLabel>
+                                            <FormLabel>{tCommon("description")}</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Peças e acessórios" {...field} />
+                                                <Input placeholder={tForm("descriptionPlaceholder")} {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -162,7 +160,7 @@ export function SidebarHeaderItem() {
 
 
                                 <DialogFooter>
-                                    <Button type="submit" form="add-list-form">Criar</Button>
+                                    <Button type="submit" form="add-list-form">{tCommon("create")}</Button>
                                 </DialogFooter>
 
                             </form>

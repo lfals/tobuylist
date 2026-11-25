@@ -10,9 +10,9 @@ import type { ListSummary } from "@/types/list"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Loader2Icon } from "lucide-react"
 import { useState, useTransition, type ReactNode } from "react"
+import { useTranslations } from "next-intl"
 import { useForm } from "react-hook-form"
-import type { z } from "zod"
-import { emptyItemFormValues, formSchema } from "../formSchema"
+import { emptyItemFormValues, useItemFormSchema, type ItemFormValues } from "../formSchema"
 import { NewItemForm } from "../item-form"
 
 export default function SharedHeader({
@@ -29,13 +29,16 @@ export default function SharedHeader({
 	const [isOpen, setIsOpen] = useState(false)
 	const [isSaving, startSaving] = useTransition()
 	const isMobile = useIsMobile()
+	const t = useTranslations("Items")
+	const tCommon = useTranslations("Common")
+	const formSchema = useItemFormSchema()
 
-	const form = useForm<z.infer<typeof formSchema>>({
+	const form = useForm<ItemFormValues>({
 		resolver: zodResolver(formSchema),
 		defaultValues: emptyItemFormValues,
 	})
 
-	function onSubmit(values: z.infer<typeof formSchema>) {
+	function onSubmit(values: ItemFormValues) {
 		startSaving(async () => {
 			await createListItem(list.id, {
 				...values,
@@ -65,7 +68,7 @@ export default function SharedHeader({
 				<div className="flex flex-wrap items-center justify-end gap-2">
 					{actions}
 					{canAdd ? (
-						<Button type="button" onClick={() => setIsOpen(true)}>Adicionar</Button>
+						<Button type="button" onClick={() => setIsOpen(true)}>{tCommon("add")}</Button>
 					) : null}
 				</div>
 			</div>
@@ -74,7 +77,7 @@ export default function SharedHeader({
 					<Drawer open={isOpen} onOpenChange={handleOpenChange}>
 						<DrawerContent>
 							<DrawerHeader>
-								<DrawerTitle>Novo item</DrawerTitle>
+								<DrawerTitle>{t("newTitle")}</DrawerTitle>
 							</DrawerHeader>
 							<NewItemForm
 								form={form}
@@ -86,7 +89,7 @@ export default function SharedHeader({
 								{({ isFetching }) => (
 									<DrawerFooter>
 										<Button type="submit" disabled={isSaving || isFetching} form="create-item-form">
-											{isSaving ? <Loader2Icon size={16} className="animate-spin" /> : "Adicionar"}
+											{isSaving ? <Loader2Icon size={16} className="animate-spin" /> : tCommon("add")}
 										</Button>
 									</DrawerFooter>
 								)}
@@ -97,7 +100,7 @@ export default function SharedHeader({
 					<Dialog open={isOpen} onOpenChange={handleOpenChange} modal>
 						<DialogContent className="sm:max-w-[425px]">
 							<DialogHeader>
-								<DialogTitle>Novo item</DialogTitle>
+								<DialogTitle>{t("newTitle")}</DialogTitle>
 							</DialogHeader>
 							<NewItemForm
 								form={form}
@@ -109,7 +112,7 @@ export default function SharedHeader({
 								{({ isFetching }) => (
 									<DialogFooter>
 										<Button type="submit" disabled={isSaving || isFetching} form="create-item-form">
-											{isSaving ? <Loader2Icon size={16} className="animate-spin" /> : "Adicionar"}
+											{isSaving ? <Loader2Icon size={16} className="animate-spin" /> : tCommon("add")}
 										</Button>
 									</DialogFooter>
 								)}

@@ -5,12 +5,10 @@ import { Input } from "@/components/ui/input"
 import { useAutofillFromLink } from "@/hooks/use-autofill-from-link"
 import { formatNumber } from "@/lib/format-number"
 import { Loader2Icon } from "lucide-react"
+import { useTranslations } from "next-intl"
 import type { ReactNode } from "react"
 import type { UseFormReturn } from "react-hook-form"
-import type { z } from "zod"
-import { formSchema } from "./formSchema"
-
-type ItemFormValues = z.infer<typeof formSchema>
+import type { ItemFormValues } from "./formSchema"
 
 type NewItemFormChildren = ReactNode | ((state: { isFetching: boolean }) => ReactNode)
 
@@ -31,6 +29,7 @@ export function NewItemForm({
 	showImageUrl?: boolean
 	children: NewItemFormChildren
 }) {
+	const t = useTranslations("ItemForm")
 	const { isFetching } = useAutofillFromLink(form, isOpen)
 	const actions = typeof children === "function" ? children({ isFetching }) : children
 
@@ -54,13 +53,13 @@ export function NewItemForm({
 					render={({ field }) => (
 						<FormItem>
 							<FormLabel className="flex items-center gap-2">
-								Link
+								{t("link")}
 								{isFetching ? <Loader2Icon size={14} className="animate-spin" /> : null}
 							</FormLabel>
 							<FormControl>
 								<Input
 									type="url"
-									placeholder="https://loja.com.br/produto"
+									placeholder={t("linkPlaceholder")}
 									{...field}
 									value={field.value ?? ""}
 									disabled={isFetching}
@@ -75,9 +74,9 @@ export function NewItemForm({
 					name="name"
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel>Item</FormLabel>
+							<FormLabel>{t("item")}</FormLabel>
 							<FormControl>
-								<Input placeholder="Nome do item" {...field} disabled={isFetching} />
+								<Input placeholder={t("itemPlaceholder")} {...field} disabled={isFetching} />
 							</FormControl>
 							<FormMessage />
 						</FormItem>
@@ -88,9 +87,9 @@ export function NewItemForm({
 					name="store"
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel>Loja</FormLabel>
+							<FormLabel>{t("store")}</FormLabel>
 							<FormControl>
-								<Input type="text" placeholder="Nome da loja" {...field} value={field.value ?? ""} disabled={isFetching} />
+								<Input type="text" placeholder={t("storePlaceholder")} {...field} value={field.value ?? ""} disabled={isFetching} />
 							</FormControl>
 							<FormMessage />
 						</FormItem>
@@ -102,9 +101,9 @@ export function NewItemForm({
 						name="imageUrl"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Imagem</FormLabel>
+								<FormLabel>{t("image")}</FormLabel>
 								<FormControl>
-									<Input type="url" placeholder="https://site.com.br/image.jpg" {...field} value={field.value ?? ""} disabled={isFetching} />
+									<Input type="url" placeholder={t("imagePlaceholder")} {...field} value={field.value ?? ""} disabled={isFetching} />
 								</FormControl>
 								<FormMessage />
 							</FormItem>
@@ -117,7 +116,7 @@ export function NewItemForm({
 						name="price"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Preço</FormLabel>
+								<FormLabel>{t("price")}</FormLabel>
 								<FormControl>
 									<Input
 										type="text"
@@ -138,7 +137,7 @@ export function NewItemForm({
 						name="quantity"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Quantidade</FormLabel>
+								<FormLabel>{t("quantity")}</FormLabel>
 								<FormControl>
 									<Input type="number" min={1} {...field} disabled={isFetching} />
 								</FormControl>
