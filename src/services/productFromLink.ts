@@ -3,6 +3,7 @@
 import { lookup } from "node:dns/promises"
 import { isIP } from "node:net"
 import { formatBRL, isBlockedProductHtml, parseMoney, parseProductHtml, type ProductFromLink } from "@/lib/productFromHtml"
+import { requireSignedIn } from "@/lib/current-user"
 import { storeFromUrl } from "@/lib/storeFromUrl"
 
 const FETCH_TIMEOUT_MS = 12_000
@@ -377,6 +378,7 @@ async function fetchMercadoLivreApi(url: string): Promise<ProductFromLink | null
 }
 
 export async function fetchProductFromLink(url: string): Promise<ProductFromLink> {
+	await requireSignedIn()
 	const trimmed = url.trim()
 	const fallback = { store: storeFromUrl(trimmed) }
 

@@ -1,31 +1,20 @@
 "use client"
 
-import { Button } from "@/components/ui/button";
-import { saveList } from "@/services/lists";
-import { useEffect } from "react";
-import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
+import { saveList } from "@/services/lists"
+import { Loader2Icon } from "lucide-react"
+import { useTransition } from "react"
 
-export function SaveList({ isPublic, listId }: { isPublic: boolean; listId: string }) {
-    useEffect(() => {
-        if (!isPublic) {
-            return
-        }
-
-        toast("Esta lista é compartilhada com você. Caso queira editar, adicione às suas listas.",
-            {
-                duration: 10000,
-                action: {
-                    label: "Adicionar",
-                    onClick: () => {
-                        void saveList(listId)
-                    }
-                }
-
-            }
-        )
-    }, [isPublic, listId])
+export function SaveList({ listId }: { listId: string }) {
+    const [isSaving, startSaving] = useTransition()
 
     return (
-        <Button onClick={() => saveList(listId)}>Salvar lista</Button>
+        <Button
+            variant="outline"
+            disabled={isSaving}
+            onClick={() => startSaving(async () => { await saveList(listId) })}
+        >
+            {isSaving ? <Loader2Icon className="animate-spin" /> : "Salvar nas minhas listas"}
+        </Button>
     )
 }

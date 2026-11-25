@@ -9,17 +9,26 @@ import { createListItem } from "@/services/listItem"
 import type { ListSummary } from "@/types/list"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Loader2Icon } from "lucide-react"
-import { useState, useTransition } from "react"
+import { useState, useTransition, type ReactNode } from "react"
 import { useForm } from "react-hook-form"
 import type { z } from "zod"
 import { emptyItemFormValues, formSchema } from "../formSchema"
 import { NewItemForm } from "../item-form"
 
-export default function SharedHeader({ list }: { list: ListSummary }) {
+export default function SharedHeader({
+	list,
+	canAdd,
+	actions,
+}: {
+	list: ListSummary
+	/** Mostra o botão "Adicionar" (lista editável e usuário logado). */
+	canAdd: boolean
+	/** Botões extras exibidos ao lado do "Adicionar" (ex.: entrar, salvar). */
+	actions?: ReactNode
+}) {
 	const [isOpen, setIsOpen] = useState(false)
 	const [isSaving, startSaving] = useTransition()
 	const isMobile = useIsMobile()
-	const canAdd = Boolean(list.public)
 
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
@@ -53,7 +62,8 @@ export default function SharedHeader({ list }: { list: ListSummary }) {
 					<h2 className="text-4xl font-bold">{list.name}</h2>
 					<p className="text-sm text-gray-500">{list.description}</p>
 				</div>
-				<div className="flex items-center gap-2">
+				<div className="flex flex-wrap items-center justify-end gap-2">
+					{actions}
 					{canAdd ? (
 						<Button type="button" onClick={() => setIsOpen(true)}>Adicionar</Button>
 					) : null}
