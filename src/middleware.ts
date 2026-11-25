@@ -1,6 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-const isPublicRoute = createRouteMatcher(["/", "/api/mobile(.*)"]);
+const isPublicRoute = createRouteMatcher(["/", "/api/mobile(.*)", "/.well-known(.*)"]);
 
 // As rotas /api/mobile autenticam via Bearer token do Clerk dentro do próprio handler e respondem 401 em JSON.
 export default clerkMiddleware(async (auth, request) => {
