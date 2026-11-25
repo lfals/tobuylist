@@ -18,6 +18,7 @@ const isI18nRoute = createRouteMatcher([
 const isPublicRoute = createRouteMatcher([
     "/s/(.*)",
     "/api/mobile(.*)",
+    "/.well-known(.*)",
     "/robots.txt",
     "/sitemap.xml",
     "/og/(.*)",
