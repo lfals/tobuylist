@@ -6,25 +6,22 @@ import { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, D
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { editList } from "@/services/lists";
-
-const formSchema = z.object({
-    name: z.string().min(2).max(50).refine((value) => value.trim() !== "", {
-        message: "O nome não pode ser apenas espaços em branco",
-    }),
-    description: z.string().max(50).optional(),
-})
+import { useTranslations } from "next-intl";
+import { useListFormSchema, type ListFormValues } from "./list-form-schema";
 
 export default function EditList({ item }: { item: { id: string; name: string; description: string | null } }) {
     const isMobile = useIsMobile()
+    const tCommon = useTranslations("Common")
+    const tForm = useTranslations("ListForm")
+    const formSchema = useListFormSchema()
     const [isOpen, setIsOpen] = useState(false)
     const [isSaving, startSaving] = useTransition()
 
-    const form = useForm<z.infer<typeof formSchema>>({
+    const form = useForm<ListFormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             name: "",
@@ -47,7 +44,7 @@ export default function EditList({ item }: { item: { id: string; name: string; d
         }
     }
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
+    function onSubmit(values: ListFormValues) {
         startSaving(async () => {
             await editList({
                 name: values.name,
@@ -66,16 +63,16 @@ export default function EditList({ item }: { item: { id: string; name: string; d
                         <Form  {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 p-4" id="add-list-form">
                                 <DrawerHeader>
-                                    <DrawerTitle>Editar lista</DrawerTitle>
+                                    <DrawerTitle>{tForm("editTitle")}</DrawerTitle>
                                 </DrawerHeader>
                                 <FormField
                                     control={form.control}
                                     name="name"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Nome</FormLabel>
+                                            <FormLabel>{tCommon("name")}</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Moto" {...field} />
+                                                <Input placeholder={tForm("namePlaceholder")} {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -86,9 +83,9 @@ export default function EditList({ item }: { item: { id: string; name: string; d
                                     name="description"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Descrição</FormLabel>
+                                            <FormLabel>{tCommon("description")}</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Peças e acessórios" {...field} />
+                                                <Input placeholder={tForm("descriptionPlaceholder")} {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -97,7 +94,7 @@ export default function EditList({ item }: { item: { id: string; name: string; d
 
 
                                 <DrawerFooter>
-                                    <Button type="submit" form="add-list-form" disabled={isSaving}>Salvar</Button>
+                                    <Button type="submit" form="add-list-form" disabled={isSaving}>{tCommon("save")}</Button>
                                 </DrawerFooter>
 
                             </form>
@@ -111,16 +108,16 @@ export default function EditList({ item }: { item: { id: string; name: string; d
                         <Form  {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8" id="add-list-form">
                                 <DialogHeader>
-                                    <DialogTitle>Editar lista</DialogTitle>
+                                    <DialogTitle>{tForm("editTitle")}</DialogTitle>
                                 </DialogHeader>
                                 <FormField
                                     control={form.control}
                                     name="name"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Nome</FormLabel>
+                                            <FormLabel>{tCommon("name")}</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Moto" {...field} />
+                                                <Input placeholder={tForm("namePlaceholder")} {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -131,9 +128,9 @@ export default function EditList({ item }: { item: { id: string; name: string; d
                                     name="description"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Descrição</FormLabel>
+                                            <FormLabel>{tCommon("description")}</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Peças e acessórios" {...field} />
+                                                <Input placeholder={tForm("descriptionPlaceholder")} {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -142,7 +139,7 @@ export default function EditList({ item }: { item: { id: string; name: string; d
 
 
                                 <DialogFooter>
-                                    <Button type="submit" form="add-list-form" disabled={isSaving}>Salvar</Button>
+                                    <Button type="submit" form="add-list-form" disabled={isSaving}>{tCommon("save")}</Button>
                                 </DialogFooter>
 
                             </form>

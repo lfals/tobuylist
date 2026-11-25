@@ -10,10 +10,10 @@ import { deleteListItem, editListItem } from "@/services/listItem"
 import type { ListItemRecord } from "@/types/list"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Loader2Icon } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { useTransition } from "react"
 import { useForm } from "react-hook-form"
-import type { z } from "zod"
-import { formSchema } from "./formSchema"
+import { useItemFormSchema, type ItemFormValues } from "./formSchema"
 import { NewItemForm } from "./item-form"
 
 type EditItemDialogProps = {
@@ -24,7 +24,7 @@ type EditItemDialogProps = {
 	onOpenChange: (open: boolean) => void
 }
 
-function itemToFormValues(item: ListItemRecord): z.infer<typeof formSchema> {
+function itemToFormValues(item: ListItemRecord): ItemFormValues {
 	return {
 		name: item.name,
 		link: item.link ?? "",
@@ -50,13 +50,15 @@ function EditItemForm({
 	isMobile: boolean
 	onOpenChange: (open: boolean) => void
 }) {
+	const tCommon = useTranslations("Common")
+	const formSchema = useItemFormSchema()
 	const [isSaving, startSaving] = useTransition()
-	const form = useForm<z.infer<typeof formSchema>>({
+	const form = useForm<ItemFormValues>({
 		resolver: zodResolver(formSchema),
 		defaultValues: itemToFormValues(item),
 	})
 
-	function onSubmit(values: z.infer<typeof formSchema>) {
+	function onSubmit(values: ItemFormValues) {
 		startSaving(async () => {
 			await editListItem(listId, {
 				...values,
@@ -83,13 +85,13 @@ function EditItemForm({
 				isMobile ? (
 					<DrawerFooter>
 						<Button type="submit" disabled={isSaving || isFetching} form={formId}>
-							{isSaving ? <Loader2Icon size={16} className="animate-spin" /> : "Salvar"}
+							{isSaving ? <Loader2Icon size={16} className="animate-spin" /> : tCommon("save")}
 						</Button>
 					</DrawerFooter>
 				) : (
 					<DialogFooter>
 						<Button type="submit" disabled={isSaving || isFetching} form={formId}>
-							{isSaving ? <Loader2Icon size={16} className="animate-spin" /> : "Salvar"}
+							{isSaving ? <Loader2Icon size={16} className="animate-spin" /> : tCommon("save")}
 						</Button>
 					</DialogFooter>
 				)
@@ -106,6 +108,7 @@ export function EditItemDialog({
 	onOpenChange,
 }: EditItemDialogProps) {
 	const isMobile = useIsMobile()
+	const t = useTranslations("Items")
 	const formContent = item ? (
 		<EditItemForm
 			key={item.id}
@@ -123,7 +126,7 @@ export function EditItemDialog({
 			<Drawer open={open} onOpenChange={onOpenChange}>
 				<DrawerContent>
 					<DrawerHeader>
-						<DrawerTitle>Editar item</DrawerTitle>
+						<DrawerTitle>{t("editTitle")}</DrawerTitle>
 					</DrawerHeader>
 					{formContent}
 				</DrawerContent>
@@ -135,7 +138,7 @@ export function EditItemDialog({
 		<Dialog open={open} onOpenChange={onOpenChange} modal>
 			<DialogContent className="sm:max-w-[425px]">
 				<DialogHeader>
-					<DialogTitle>Editar item</DialogTitle>
+					<DialogTitle>{t("editTitle")}</DialogTitle>
 				</DialogHeader>
 				{formContent}
 			</DialogContent>
@@ -150,19 +153,21 @@ type DeleteItemDialogProps = {
 }
 
 export function DeleteItemDialog({ item, open, onOpenChange }: DeleteItemDialogProps) {
+	const t = useTranslations("Items")
+	const tCommon = useTranslations("Common")
 	const [isDeleting, startDeleting] = useTransition()
 
 	return (
 		<AlertDialog open={open} onOpenChange={onOpenChange}>
 			<AlertDialogContent>
 				<AlertDialogHeader>
-					<AlertDialogTitle>Excluir item</AlertDialogTitle>
+					<AlertDialogTitle>{t("deleteTitle")}</AlertDialogTitle>
 					<AlertDialogDescription>
-						Esta ação não pode ser desfeita. Isso excluirá permanentemente o item de sua lista.
+						{t("deleteDescription")}
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 				<AlertDialogFooter>
-					<AlertDialogCancel>Cancelar</AlertDialogCancel>
+					<AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
 					<AlertDialogAction
 						disabled={isDeleting || !item}
 						className={buttonVariants({ variant: "destructive" })}
@@ -176,7 +181,7 @@ export function DeleteItemDialog({ item, open, onOpenChange }: DeleteItemDialogP
 							})
 						}}
 					>
-						{isDeleting ? <Loader2Icon size={16} className="animate-spin" /> : "Excluir"}
+						{isDeleting ? <Loader2Icon size={16} className="animate-spin" /> : tCommon("delete")}
 					</AlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialogContent>

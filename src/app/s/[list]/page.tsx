@@ -7,8 +7,10 @@ import { getListAccess } from "@/services/list-access"
 import { getSharedListItems, getSharedListSummary } from "@/services/lists-queries"
 import { SaveList } from "@/components/lists/saveList"
 import { SignInButton, SignUpButton } from "@clerk/nextjs"
+import { localeMeta, type Locale } from "@/i18n/routing"
 import { auth } from "@clerk/nextjs/server"
 import type { Metadata } from "next"
+import { getLocale, getTranslations } from "next-intl/server"
 import { notFound, redirect } from "next/navigation"
 import { Suspense } from "react"
 
@@ -16,43 +18,47 @@ type Props = { params: Promise<{ list: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
 	const { list } = await params
-	const summary = await getSharedListSummary(list)
+	const [t, locale, summary] = await Promise.all([
+		getTranslations("Meta.shared"),
+		getLocale() as Promise<Locale>,
+		getSharedListSummary(list),
+	])
 
 	// Lista compartilhada não deve aparecer em buscadores; o preview de link (WhatsApp, Slack...) continua funcionando.
 	const robots = { index: false, follow: false }
 	if (!summary) {
-		return { title: "Lista não encontrada", robots }
+		return { title: t("notFound"), robots }
 	}
 
 	const total = formatViewNumber(summary.totalValue.toString())
 	const title = `${summary.name} · ${total}`
 	const description = summary.description
-		? `${summary.description}. Lista compartilhada no To Buy List.`
-		: "Lista compartilhada no To Buy List. Abra o link para ver os itens e o total."
+		? t("descriptionWithText", { description: summary.description })
+		: t("description")
 
 	return {
 		title,
 		description,
 		robots,
-		openGraph: { title, description, type: "website", locale: "pt_BR" },
+		openGraph: { title, description, type: "website", locale: localeMeta[locale].ogLocale },
 		twitter: { card: "summary_large_image", title, description },
 	}
 }
 
-function GuestNotice({ editable, returnTo }: { editable: boolean; returnTo: string }) {
+async function GuestNotice({ editable, returnTo }: { editable: boolean; returnTo: string }) {
+	const [t, tCommon] = await Promise.all([getTranslations("SharedList"), getTranslations("Common")])
+
 	return (
 		<div className="flex flex-col gap-3 rounded-md border bg-white p-4 dark:bg-neutral-900 sm:flex-row sm:items-center sm:justify-between">
 			<p className="text-sm">
-				{editable
-					? "O dono liberou esta lista para edição. Entre na sua conta para adicionar e alterar itens."
-					: "Você está vendo uma lista compartilhada. Entre na sua conta para salvar uma cópia nas suas listas."}
+				{editable ? t("guestEditable") : t("guestReadOnly")}
 			</p>
 			<div className="flex shrink-0 gap-2">
 				<SignInButton mode="modal" forceRedirectUrl={returnTo} signUpForceRedirectUrl={returnTo}>
-					<Button variant="outline">Entrar</Button>
+					<Button variant="outline">{tCommon("signIn")}</Button>
 				</SignInButton>
 				<SignUpButton mode="modal" forceRedirectUrl={returnTo} signInForceRedirectUrl={returnTo}>
-					<Button>Criar conta</Button>
+					<Button>{tCommon("signUp")}</Button>
 				</SignUpButton>
 			</div>
 		</div>

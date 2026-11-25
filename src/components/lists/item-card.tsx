@@ -11,6 +11,7 @@ import { formatViewNumber } from "@/lib/format-number"
 import { cn } from "@/lib/utils"
 import type { ListItemRecord } from "@/types/list"
 import { GripIcon, ImageOffIcon, MoreHorizontalIcon } from "lucide-react"
+import { useTranslations } from "next-intl"
 import Image from "next/image"
 import type { ReactNode } from "react"
 import { memo } from "react"
@@ -46,6 +47,8 @@ export function ItemCardBody({
 	onImageError,
 	dragHandle,
 }: ItemCardProps) {
+	const tCommon = useTranslations("Common")
+
 	return (
 		<>
 			{canEdit ? dragHandle : null}
@@ -94,10 +97,10 @@ export function ItemCardBody({
 					</DropdownMenuTrigger>
 					<DropdownMenuContent>
 						<DropdownMenuItem onClick={() => onMark(item)}>
-							{item.isActive ? "Desabilitar" : "Habilitar"}
+							{item.isActive ? tCommon("disable") : tCommon("enable")}
 						</DropdownMenuItem>
-						<DropdownMenuItem onClick={() => onEdit(item)}>Editar</DropdownMenuItem>
-						<DropdownMenuItem onClick={() => onDelete(item)}>Excluir</DropdownMenuItem>
+						<DropdownMenuItem onClick={() => onEdit(item)}>{tCommon("edit")}</DropdownMenuItem>
+						<DropdownMenuItem onClick={() => onDelete(item)}>{tCommon("delete")}</DropdownMenuItem>
 					</DropdownMenuContent>
 				</DropdownMenu>
 			) : null}

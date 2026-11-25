@@ -1,16 +1,26 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import createIntlMiddleware from "next-intl/middleware";
 import { NextResponse } from "next/server";
+import { routing } from "./i18n/routing";
 
-// Landing e arquivos que buscadores e assistentes de IA precisam ler sem login.
+const handleI18nRouting = createIntlMiddleware(routing);
+
+// Rotas em que o idioma vem da URL: landing (/ e /en) e llms.txt, que existe em cada idioma.
+// O resto do app (/app, /s/[id]) não tem prefixo; o idioma dele vem do cookie (src/i18n/request.ts).
+const isI18nRoute = createRouteMatcher([
+    "/",
+    "/llms.txt",
+    ...routing.locales.flatMap((locale) => [`/${locale}`, `/${locale}/(.*)`]),
+]);
+
+// Arquivos que buscadores e assistentes de IA precisam ler sem login.
 // /s/[id] é a lista compartilhada: qualquer pessoa com o link pode ver; editar exige login (checado nas server actions).
 const isPublicRoute = createRouteMatcher([
-    "/",
     "/s/(.*)",
     "/api/mobile(.*)",
     "/robots.txt",
     "/sitemap.xml",
-    "/llms.txt",
-    "/opengraph-image(.*)",
+    "/og/(.*)",
 ]);
 
 // Links de compartilhamento antigos: /app/[id]?share=true
@@ -21,6 +31,10 @@ export default clerkMiddleware(async (auth, request) => {
     const legacy = legacyShareLink.exec(request.nextUrl.pathname);
     if (legacy && request.nextUrl.searchParams.get("share") === "true") {
         return NextResponse.redirect(new URL(`/s/${legacy[1]}`, request.url));
+    }
+
+    if (isI18nRoute(request)) {
+        return handleI18nRouting(request);
     }
 
     if (!isPublicRoute(request)) {

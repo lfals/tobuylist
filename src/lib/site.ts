@@ -12,11 +12,8 @@ function resolveSiteUrl() {
 	return "http://localhost:3000"
 }
 
+// Título e descrição ficam em messages/<idioma>.json (namespace "Meta"), pois mudam com o idioma.
 export const siteConfig = {
 	name: "To Buy List",
 	url: resolveSiteUrl(),
-	locale: "pt-BR",
-	title: "To Buy List: listas de compras com preço, link e total",
-	description:
-		"Monte listas de compras com nome, loja, preço e link de cada item, veja o total na hora e compartilhe a lista com quem vai comprar junto. Funciona no navegador, no celular e no computador.",
 } as const

@@ -1,8 +1,11 @@
+import { LocaleSwitcher } from "@/components/locale-switcher"
 import { ModeToggle } from "@/components/themetoggle"
 import { Button } from "@/components/ui/button"
+import { Link } from "@/i18n/navigation"
 import { SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs"
 import { ListChecksIcon } from "lucide-react"
-import Link from "next/link"
+import { getTranslations } from "next-intl/server"
+import NextLink from "next/link"
 
 export default async function SharedListLayout({
 	children,
@@ -12,6 +15,8 @@ export default async function SharedListLayout({
 	params: Promise<{ list: string }>
 }) {
 	const { list } = await params
+	const t = await getTranslations("Common")
+	const tShared = await getTranslations("SharedList")
 	const returnTo = `/s/${list}`
 
 	return (
@@ -22,18 +27,19 @@ export default async function SharedListLayout({
 					To Buy List
 				</Link>
 				<div className="flex items-center gap-2">
+					<LocaleSwitcher />
 					<ModeToggle />
 					<SignedOut>
 						<SignInButton mode="modal" forceRedirectUrl={returnTo} signUpForceRedirectUrl={returnTo}>
-							<Button variant="ghost">Entrar</Button>
+							<Button variant="ghost">{t("signIn")}</Button>
 						</SignInButton>
 						<SignUpButton mode="modal" forceRedirectUrl={returnTo} signInForceRedirectUrl={returnTo}>
-							<Button>Criar conta</Button>
+							<Button>{t("signUp")}</Button>
 						</SignUpButton>
 					</SignedOut>
 					<SignedIn>
 						<Button asChild variant="ghost">
-							<Link href="/app">Minhas listas</Link>
+							<NextLink href="/app">{tShared("myLists")}</NextLink>
 						</Button>
 						<UserButton />
 					</SignedIn>

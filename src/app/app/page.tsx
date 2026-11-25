@@ -7,23 +7,25 @@ import {
 } from "@/components/ui/card";
 import { formatViewNumber } from "@/lib/format-number";
 import { getListDashboard } from "@/services/lists-queries";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 
 export default async function Dashboard() {
-	const listsCards = await getListDashboard()
+	const [t, listsCards] = await Promise.all([getTranslations("Common"), getListDashboard()])
+	const tDashboard = await getTranslations("Dashboard")
 	return (
 		<div className="flex flex-col gap-8 h-[calc(100vh-160px)]">
 			<div className="flex items-center gap-8">
 				<div className="min-w-32">
-					<h1>Total</h1>
+					<h1>{t("total")}</h1>
 					<p className="text-2xl font-bold">{formatViewNumber(listsCards.totalValue.toString())}</p>
 				</div>
 				<div>
-					<h1>Listas</h1>
+					<h1>{t("lists")}</h1>
 					<p className="text-2xl font-bold">{listsCards.lists.length}</p>
 				</div>
 				<div>
-					<h1>Itens</h1>
+					<h1>{t("items")}</h1>
 					<p className="text-2xl font-bold">{listsCards.items}</p>
 				</div>
 			</div>
@@ -38,18 +40,18 @@ export default async function Dashboard() {
 							<CardContent>
 								<div className="flex items-center justify-between gap-2">
 									<div>
-										<h1>Itens</h1>
+										<h1>{t("items")}</h1>
 										<p>{listCard.items}</p>
 									</div>
 									<div>
-										<h1>Total</h1>
+										<h1>{t("total")}</h1>
 										<p>{formatViewNumber(listCard.totalValue.toString())}</p>
 									</div>
 								</div>
 							</CardContent>
 						</Card>
 					</Link>
-				)) : <p>Sem listas</p>}
+				)) : <p>{tDashboard("noLists")}</p>}
 			</div>
 		</div>
 	);
