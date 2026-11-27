@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, int, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from "zod";
 
@@ -22,9 +22,16 @@ export const listItemsTable = sqliteTable("listItems", {
     name: text().notNull(),
     store: text(),
     link: text(),
+    // Valores em centavos.
     price: int().notNull(),
+    // Preço de referência (cadastro ou última edição manual); o refresh não mexe nele.
+    originalPrice: int(),
     quantity: int().notNull(),
     imageUrl: text(),
+
+    priceCheckedAt: int(),
+    priceCheckStatus: text({ enum: ["ok", "failed"] }),
+    priceCheckFailures: int().notNull().default(0),
 
     createdAt: int().notNull().default(sql`CURRENT_TIMESTAMP`),
     updatedAt: int().notNull().default(sql`CURRENT_TIMESTAMP`),
@@ -32,6 +39,16 @@ export const listItemsTable = sqliteTable("listItems", {
     order: int().notNull().default(0),
 });
 
+
+export const priceHistoryTable = sqliteTable("priceHistory", {
+    id: int().primaryKey({ autoIncrement: true }),
+    itemId: int().notNull().references(() => listItemsTable.id, { onDelete: 'cascade' }),
+    // Centavos.
+    price: int().notNull(),
+    // Epoch em ms, sempre informado pelo código.
+    checkedAt: int().notNull(),
+    source: text({ enum: ["initial", "manual", "scrape"] }).notNull(),
+}, (table) => [index("priceHistory_item_checked_idx").on(table.itemId, table.checkedAt)]);
 
 export const sharedListsTable = sqliteTable("sharedLists", {
     id: text().primaryKey(),

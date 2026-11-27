@@ -28,6 +28,7 @@
 
 - **Paste a link, get the item filled in.** Drop in a product URL and the app tries to read the store page to fill in name, store, price and photo. Some stores block that, so you can always type it in and review everything before saving.
 - **The total adds itself up.** Every item has a price and a quantity, and the list total sits at the top, so you know the damage before leaving the house.
+- **Price history.** Each item has a chart icon that opens its price history. Prices are re-checked from the product link without any AI: when you open a list (at most once a day per item) and by a daily cron for items nobody has opened in a week. The original price stays on the card, struck through, next to the new one.
 - **Share a list with a link.** Choose whether the other person can only look or also edit. Anyone with the link can view it without an account; editing and saving it to their own account needs a sign-in.
 - **Order by what matters.** Drag items to put the most urgent ones first.
 - **Duplicate recurring lists.** Monthly groceries, school supplies, a trip: copy the list and tweak only what changed.
@@ -82,6 +83,11 @@ TURSO_AUTH_TOKEN=
 GOOGLE_API_KEY=
 GOOGLE_CX_KEY=
 
+# Optional: secret for the price refresh cron (/api/cron/refresh-prices).
+# Vercel sends it as `Authorization: Bearer <value>`. Without it the cron
+# endpoint answers 401 and prices are only refreshed when a list is opened.
+CRON_SECRET=
+
 # Optional: public URL of the site (used for canonical links, sitemap and
 # Open Graph). Falls back to the Vercel production URL, then localhost.
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
@@ -91,12 +97,13 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
 ### 3. Set up the database
 
-The schema lives in [`src/db/schema.ts`](src/db/schema.ts). Generate and apply the migrations:
+The schema lives in [`src/db/schema.ts`](src/db/schema.ts) and the migrations are versioned in [`migrations/`](migrations). Apply them with:
 
 ```bash
-pnpm db:generate
 pnpm db:migrate
 ```
+
+After changing the schema, run `pnpm db:generate` and commit the new migration. If your database was created earlier with `db:push`, `db:migrate` still works: the baseline migration uses `CREATE TABLE IF NOT EXISTS`.
 
 ### 4. Run it
 
@@ -108,7 +115,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ### Deploying
 
-The easiest path is [Vercel](https://vercel.com/new): import the repository, add the environment variables above, and deploy. Set `NEXT_PUBLIC_SITE_URL` to your production domain so canonical URLs and the sitemap point to the right place.
+The easiest path is [Vercel](https://vercel.com/new): import the repository, add the environment variables above, and deploy. Set `NEXT_PUBLIC_SITE_URL` to your production domain so canonical URLs and the sitemap point to the right place, and set `CRON_SECRET` so the daily price refresh in [`vercel.json`](vercel.json) is authorized.
 
 ## Scripts
 
@@ -161,7 +168,7 @@ To add a language (for example `es`):
 
 ## Mobile API
 
-Besides the web app, the project exposes a small REST API under `/api/mobile` (lists, items, reorder, share, duplicate and product autofill from a link). Requests are authenticated with the Clerk session token sent as `Authorization: Bearer <token>`; unauthenticated calls get a `401` JSON response.
+Besides the web app, the project exposes a small REST API under `/api/mobile` (lists, items, reorder, share, duplicate and product autofill from a link, per-item price history and a price refresh for a list). Requests are authenticated with the Clerk session token sent as `Authorization: Bearer <token>`; unauthenticated calls get a `401` JSON response.
 
 ## Roadmap
 

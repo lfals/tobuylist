@@ -280,5 +280,29 @@
       "itemCount": "{count, plural, one {# item} other {# items}}",
       "openLink": "Open the link to see"
     }
+  },
+  "PriceHistory": {
+    "title": "Price history",
+    "open": "View price history",
+    "loading": "Loading…",
+    "error": "Couldn't load the history.",
+    "retry": "Try again",
+    "current": "Current",
+    "lowest": "Lowest",
+    "highest": "Highest",
+    "original": "Original price",
+    "change": "Change",
+    "updated": "Updated {time}",
+    "neverChecked": "Not checked yet",
+    "empty": "No changes so far. The price is checked when you open the list, at most once a day.",
+    "noLink": "This item has no link, so the price only changes if you edit it.",
+    "failed": "Couldn't check the price from this link. We'll try again later.",
+    "newPrices": "New prices available",
+    "refresh": "Refresh",
+    "sourceInitial": "Added",
+    "sourceManual": "Edited by you",
+    "sourceScrape": "Checked at the store",
+    "chartLabel": "Price history chart for {name}",
+    "originalPrice": "Original price: {price}"
   }
 }

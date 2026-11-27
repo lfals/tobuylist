@@ -11,7 +11,7 @@ import { formatAddedDate } from "@/lib/format-date"
 import { formatViewNumber } from "@/lib/format-number"
 import { cn } from "@/lib/utils"
 import type { ListItemRecord } from "@/types/list"
-import { GripIcon, ImageOffIcon, MoreHorizontalIcon } from "lucide-react"
+import { GripIcon, ImageOffIcon, LineChartIcon, MoreHorizontalIcon } from "lucide-react"
 import { useLocale, useTranslations } from "next-intl"
 import Image from "next/image"
 import type { ReactNode } from "react"
@@ -24,6 +24,7 @@ export type ItemCardProps = {
 	onEdit: (item: ListItemRecord) => void
 	onDelete: (item: ListItemRecord) => void
 	onMark: (item: ListItemRecord) => void
+	onHistory: (item: ListItemRecord) => void
 	onImageError?: (item: ListItemRecord) => void
 	dragHandle?: ReactNode
 }
@@ -51,10 +52,14 @@ export function ItemCardBody({
 	onEdit,
 	onDelete,
 	onMark,
+	onHistory,
 	onImageError,
 	dragHandle,
 }: ItemCardProps) {
 	const tCommon = useTranslations("Common")
+	const tPrice = useTranslations("PriceHistory")
+	const hasChange = item.originalPrice != null && item.originalPrice !== item.price
+	const isCheaper = hasChange && item.price < (item.originalPrice ?? 0)
 	const locale = useLocale()
 	const addedAt = formatAddedDate(item.createdAt, locale)
 
@@ -93,29 +98,56 @@ export function ItemCardBody({
 						<p>{item.store ?? <>&nbsp;</>}</p>
 					</a>
 				</div>
-				<h1>
-					{formatViewNumber(item.price.toString())} (x{item.quantity})
+				<h1 className="flex flex-wrap items-baseline gap-x-2">
+					{hasChange ? (
+						<s
+							className="text-sm text-neutral-500"
+							title={tPrice("originalPrice", { price: formatViewNumber(String(item.originalPrice)) })}
+						>
+							{formatViewNumber(String(item.originalPrice))}
+						</s>
+					) : null}
+					<span
+						className={cn(
+							hasChange && "font-bold",
+							hasChange && (isCheaper ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"),
+						)}
+					>
+						{formatViewNumber(item.price.toString())}
+					</span>
+					<span>(x{item.quantity})</span>
 				</h1>
 				{addedAt ? (
 					<p className="text-xs text-muted-foreground">{tCommon("addedOn", { date: addedAt })}</p>
 				) : null}
 			</div>
-			{canEdit ? (
-				<DropdownMenu modal={false}>
-					<DropdownMenuTrigger asChild>
-						<Button size="icon" variant="ghost">
-							<MoreHorizontalIcon size={16} />
-						</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent>
-						<DropdownMenuItem onClick={() => onMark(item)}>
-							{item.isActive ? tCommon("disable") : tCommon("enable")}
-						</DropdownMenuItem>
-						<DropdownMenuItem onClick={() => onEdit(item)}>{tCommon("edit")}</DropdownMenuItem>
-						<DropdownMenuItem onClick={() => onDelete(item)}>{tCommon("delete")}</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			) : null}
+			<div className="flex items-center gap-1">
+				<Button
+					size="icon"
+					variant="ghost"
+					aria-label={tPrice("open")}
+					title={tPrice("open")}
+					onClick={() => onHistory(item)}
+				>
+					<LineChartIcon size={16} />
+				</Button>
+				{canEdit ? (
+					<DropdownMenu modal={false}>
+						<DropdownMenuTrigger asChild>
+							<Button size="icon" variant="ghost">
+								<MoreHorizontalIcon size={16} />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuItem onClick={() => onMark(item)}>
+								{item.isActive ? tCommon("disable") : tCommon("enable")}
+							</DropdownMenuItem>
+							<DropdownMenuItem onClick={() => onEdit(item)}>{tCommon("edit")}</DropdownMenuItem>
+							<DropdownMenuItem onClick={() => onDelete(item)}>{tCommon("delete")}</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				) : null}
+			</div>
 		</>
 	)
 }
