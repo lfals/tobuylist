@@ -36,13 +36,11 @@ function PriceHistoryBody({ item }: { item: ListItemRecord }) {
 	const [data, setData] = useState<PriceHistoryPayload | null>(null)
 	const [pending, setPending] = useState<PriceHistoryPayload | null>(null)
 	const [failed, setFailed] = useState(false)
-	const [selectedId, setSelectedId] = useState<number | null>(null)
 
 	const show = useCallback((payload: PriceHistoryPayload) => {
 		setData(payload)
 		setPending(null)
 		setFailed(false)
-		setSelectedId(payload.points.at(-1)?.id ?? null)
 	}, [])
 
 	const load = useCallback(() => {
@@ -79,7 +77,6 @@ function PriceHistoryBody({ item }: { item: ListItemRecord }) {
 
 	const formatters = useMemo(
 		() => ({
-			dateTime: new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }),
 			relative: new Intl.RelativeTimeFormat(locale, { numeric: "auto" }),
 		}),
 		[locale],
@@ -123,7 +120,6 @@ function PriceHistoryBody({ item }: { item: ListItemRecord }) {
 	const highest = Math.max(...prices)
 	const reference = data.item.originalPrice ?? points[0].price
 	const changePct = reference > 0 ? ((data.item.price - reference) / reference) * 100 : 0
-	const selected = points.find((point) => point.id === selectedId) ?? points.at(-1)!
 	const sourceLabel = { initial: t("sourceInitial"), manual: t("sourceManual"), scrape: t("sourceScrape") }
 
 	return (
@@ -154,15 +150,10 @@ function PriceHistoryBody({ item }: { item: ListItemRecord }) {
 			<PriceChart
 				points={points}
 				endAt={data.item.priceCheckedAt ?? points.at(-1)!.checkedAt}
-				selectedId={selected.id}
-				onSelect={setSelectedId}
 				label={t("chartLabel", { name: data.item.name })}
+				sourceLabels={sourceLabel}
+				priceLabel={t("current")}
 			/>
-
-			<p className="text-sm" aria-live="polite">
-				<strong>{formatNumber(String(selected.price))}</strong> · {formatters.dateTime.format(selected.checkedAt)} ·{" "}
-				{sourceLabel[selected.source]}
-			</p>
 
 			{points.length < 2 ? <p className="text-sm text-neutral-500">{t("empty")}</p> : null}
 			{!data.item.hasLink ? <p className="text-sm text-neutral-500">{t("noLink")}</p> : null}
