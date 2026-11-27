@@ -12,7 +12,9 @@ import { StaticItemRow } from "./item-card"
 
 // O gráfico (recharts) é pesado e só serve depois do clique: fica fora do bundle inicial da lista.
 const loadPriceHistoryDialog = () => import("./price-history-dialog").then((mod) => mod.PriceHistoryDialog)
-const PriceHistoryDialog = dynamic(loadPriceHistoryDialog)
+// `ssr: false` (ou `loading`) cria um Suspense só para este componente. Sem isso o dynamic() suspende para o
+// loading.tsx da rota e o clique piscava o skeleton da página inteira enquanto o chunk baixava.
+const PriceHistoryDialog = dynamic(loadPriceHistoryDialog, { ssr: false, loading: () => null })
 
 const ReorderableItemList = dynamic(() =>
 	import("./item-row").then((mod) => mod.ReorderableItemList),
