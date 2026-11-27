@@ -279,5 +279,29 @@
       "itemCount": "{count, plural, =0 {# itens} one {# item} other {# itens}}",
       "openLink": "Abra o link para ver"
     }
+  },
+  "PriceHistory": {
+    "title": "Histórico de preço",
+    "open": "Ver histórico de preço",
+    "loading": "Carregando…",
+    "error": "Não foi possível carregar o histórico.",
+    "retry": "Tentar de novo",
+    "current": "Atual",
+    "lowest": "Menor",
+    "highest": "Maior",
+    "original": "Preço original",
+    "change": "Variação",
+    "updated": "Atualizado {time}",
+    "neverChecked": "Ainda não conferido",
+    "empty": "Sem variações até agora. O preço é conferido ao abrir a lista, no máximo uma vez por dia.",
+    "noLink": "Este item não tem link, então o preço só muda se você editar.",
+    "failed": "Não consegui conferir o preço por este link. Tentaremos de novo mais tarde.",
+    "newPrices": "Novos preços disponíveis",
+    "refresh": "Atualizar",
+    "sourceInitial": "Cadastro",
+    "sourceManual": "Editado por você",
+    "sourceScrape": "Conferido na loja",
+    "chartLabel": "Gráfico do histórico de preço de {name}",
+    "originalPrice": "Preço original: {price}"
   }
 }

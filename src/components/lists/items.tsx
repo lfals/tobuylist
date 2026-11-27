@@ -1,11 +1,15 @@
 "use client"
 
-import { deleteListItem, editListItem, getItemImage, markListItem, reorderListItem } from "@/services/listItem"
+import { useAuth } from "@clerk/nextjs"
+import { isDueForRefresh, OPEN_LIST_TTL_MS } from "@/lib/price-history"
+import { deleteListItem, getItemImage, markListItem, reorderListItem, setItemImage } from "@/services/listItem"
 import type { ListItemRecord } from "@/types/list"
 import dynamic from "next/dynamic"
+import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useRef, useState, useTransition } from "react"
 import { DeleteItemDialog, EditItemDialog } from "./item-dialogs"
 import { StaticItemRow } from "./item-card"
+import { PriceHistoryDialog } from "./price-history-dialog"
 
 const ReorderableItemList = dynamic(() =>
 	import("./item-row").then((mod) => mod.ReorderableItemList),
@@ -29,6 +33,11 @@ export default function Items({
 	const [items, setItems] = useState(initialItems)
 	const [editingItem, setEditingItem] = useState<ListItemRecord | null>(null)
 	const [deletingItem, setDeletingItem] = useState<ListItemRecord | null>(null)
+	const [historyItem, setHistoryItem] = useState<ListItemRecord | null>(null)
+	const [historyOpen, setHistoryOpen] = useState(false)
+	const router = useRouter()
+	const { isLoaded, isSignedIn } = useAuth()
+	const refreshStartedFor = useRef<string>(undefined)
 	const lastSavedOrder = useRef(orderSignature(initialItems))
 	const persistTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
 	const [, startMarking] = useTransition()
@@ -37,6 +46,32 @@ export default function Items({
 		setItems(initialItems)
 		lastSavedOrder.current = orderSignature(initialItems)
 	}, [initialItems])
+
+	// Ao abrir a lista, confere em segundo plano os preços vencidos (> 24h). A tela não espera por isso:
+	// os preços aparecem como estão salvos e, se algum mudar, a lista é recarregada.
+	useEffect(() => {
+		if (!isLoaded || !isSignedIn || refreshStartedFor.current === listId) {
+			return
+		}
+		const now = Date.now()
+		if (!initialItems.some((item) => isDueForRefresh(item, now, OPEN_LIST_TTL_MS))) {
+			return
+		}
+		refreshStartedFor.current = listId
+		fetch(`/api/mobile/lists/${listId}/refresh-prices`, { method: "POST" })
+			.then((response) => (response.ok ? response.json() : null))
+			.then((result: { updated?: number } | null) => {
+				if (result?.updated) {
+					router.refresh()
+				}
+			})
+			.catch(() => {})
+	}, [isLoaded, isSignedIn, listId, initialItems, router])
+
+	const handleHistory = useCallback((current: ListItemRecord) => {
+		setHistoryItem(current)
+		setHistoryOpen(true)
+	}, [])
 
 	const handleMark = useCallback((current: ListItemRecord) => {
 		startMarking(async () => {
@@ -47,11 +82,7 @@ export default function Items({
 	const handleImageError = useCallback((current: ListItemRecord) => {
 		void (async () => {
 			const imageUrl = await getItemImage(current.name, true)
-			await editListItem(listId, {
-				...current,
-				price: String(current.price),
-				imageUrl,
-			})
+			await setItemImage(listId, current.id, imageUrl)
 		})()
 	}, [listId])
 
@@ -78,6 +109,7 @@ export default function Items({
 		onEdit: setEditingItem,
 		onDelete: setDeletingItem,
 		onMark: handleMark,
+		onHistory: handleHistory,
 		onImageError: showImage && canEdit ? handleImageError : undefined,
 	}
 
@@ -92,6 +124,7 @@ export default function Items({
 					))}
 				</div>
 			)}
+			<PriceHistoryDialog item={historyItem} open={historyOpen} onOpenChange={setHistoryOpen} />
 			{canEdit ? (
 				<>
 					<EditItemDialog
