@@ -7,12 +7,14 @@ import { Input } from "@/components/ui/input"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { formatNumber, formatViewNumber } from "@/lib/format-number"
 import { cn } from "@/lib/utils"
+import { priceToCents } from "@/lib/price-history"
 import { addItemLink, deleteItemLink } from "@/services/listItem"
+import { fetchProductFromLink } from "@/services/productFromLink"
 import type { ItemLinkRecord, ListItemRecord } from "@/types/list"
 import { ExternalLinkIcon, Loader2Icon, Trash2Icon } from "lucide-react"
 import { useTranslations } from "next-intl"
 import Image from "next/image"
-import { useMemo, useState, useTransition, type ReactNode } from "react"
+import { useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react"
 
 export function faviconUrl(link: string) {
 	return `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(link)}&size=24#refinements`
@@ -41,6 +43,49 @@ function AddLinkForm({ itemId }: { itemId: number }) {
 	const [price, setPrice] = useState("R$ 0,00")
 	const [error, setError] = useState<string | null>(null)
 	const [isSaving, startSaving] = useTransition()
+	const [isFetching, setIsFetching] = useState(false)
+	const [priceNotFound, setPriceNotFound] = useState(false)
+	const priceTouched = useRef(false)
+
+	// Ao colar um link válido, busca só o preço da loja (nome e imagem já vêm do primeiro link do item).
+	useEffect(() => {
+		setPriceNotFound(false)
+		const trimmed = link.trim()
+		if (!isValidUrl(trimmed)) {
+			setIsFetching(false)
+			return
+		}
+
+		let cancelled = false
+		setIsFetching(true)
+		const timeout = setTimeout(async () => {
+			try {
+				const product = await fetchProductFromLink(trimmed)
+				if (cancelled) {
+					return
+				}
+				const cents = priceToCents(product.price)
+				if (cents == null) {
+					setPriceNotFound(true)
+				} else if (!priceTouched.current) {
+					setPrice(formatNumber(String(cents)))
+				}
+			} catch {
+				if (!cancelled) {
+					setPriceNotFound(true)
+				}
+			} finally {
+				if (!cancelled) {
+					setIsFetching(false)
+				}
+			}
+		}, 450)
+
+		return () => {
+			cancelled = true
+			clearTimeout(timeout)
+		}
+	}, [link])
 
 	function submit(event: React.FormEvent) {
 		event.preventDefault()
@@ -58,6 +103,7 @@ function AddLinkForm({ itemId }: { itemId: number }) {
 		startSaving(async () => {
 			try {
 				await addItemLink(itemId, { link: trimmed, price: cents })
+				priceTouched.current = false
 				setLink("")
 				setPrice("R$ 0,00")
 			} catch {
@@ -74,7 +120,10 @@ function AddLinkForm({ itemId }: { itemId: number }) {
 				value={link}
 				placeholder={tForm("linkPlaceholder")}
 				aria-label={tForm("link")}
-				onChange={(event) => setLink(event.target.value)}
+				onChange={(event) => {
+					priceTouched.current = false
+					setLink(event.target.value)
+				}}
 				disabled={isSaving}
 			/>
 			<div className="flex gap-2">
@@ -83,13 +132,18 @@ function AddLinkForm({ itemId }: { itemId: number }) {
 					inputMode="numeric"
 					value={price}
 					aria-label={tForm("price")}
-					onChange={(event) => setPrice(formatNumber(event.target.value))}
+					onChange={(event) => {
+						priceTouched.current = true
+						setPrice(formatNumber(event.target.value))
+					}}
 					disabled={isSaving}
 				/>
-				<Button type="submit" disabled={isSaving || !link.trim()}>
-					{isSaving ? <Loader2Icon size={16} className="animate-spin" /> : t("add")}
+				<Button type="submit" disabled={isSaving || isFetching || !link.trim()}>
+					{isSaving || isFetching ? <Loader2Icon size={16} className="animate-spin" /> : t("add")}
 				</Button>
 			</div>
+			{isFetching ? <p className="text-sm text-muted-foreground">{t("fetchingPrice")}</p> : null}
+			{priceNotFound && !isFetching ? <p className="text-sm text-muted-foreground">{t("priceNotFound")}</p> : null}
 			{error ? <p className="text-sm text-destructive">{error}</p> : null}
 		</form>
 	)

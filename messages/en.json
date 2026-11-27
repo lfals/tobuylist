@@ -317,6 +317,8 @@
     "viewLinks": "View links and prices",
     "priceRequired": "Enter the price.",
     "saveError": "Couldn't save. This link may already be added.",
-    "deleteError": "Couldn't remove the link."
+    "deleteError": "Couldn't remove the link.",
+    "fetchingPrice": "Looking up the price…",
+    "priceNotFound": "Couldn't find the price at this store. Enter it manually."
   }
 }

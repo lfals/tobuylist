@@ -317,6 +317,8 @@
     "viewLinks": "Ver links e preços",
     "priceRequired": "Informe o preço.",
     "saveError": "Não foi possível salvar. Esse link já pode estar cadastrado.",
-    "deleteError": "Não foi possível remover o link."
+    "deleteError": "Não foi possível remover o link.",
+    "fetchingPrice": "Buscando o preço…",
+    "priceNotFound": "Não achamos o preço nessa loja. Informe manualmente."
   }
 }
