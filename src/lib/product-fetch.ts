@@ -236,12 +236,18 @@ async function fetchSafe(url: string, init: RequestInit = {}) {
 	}
 }
 
-async function fetchHtml(url: string) {
+/** A loja recusou a requisição de robô: desafio anti-robô (ex.: Cloudflare "Just a moment...") ou 403/429. */
+function isBotBlocked(response: Response) {
+	return response.headers.get("cf-mitigated") === "challenge" || response.status === 403 || response.status === 429
+}
+
+async function fetchHtml(url: string): Promise<{ html: string | null; blocked: boolean }> {
 	const response = await fetchSafe(url, { headers: BROWSER_HEADERS })
 	if (!response?.ok) {
-		return null
+		await response?.body?.cancel().catch(() => undefined)
+		return { html: null, blocked: response ? isBotBlocked(response) : false }
 	}
-	return readLimitedText(response)
+	return { html: await readLimitedText(response), blocked: false }
 }
 
 function isMercadoLivreUrl(url: string) {
@@ -414,12 +420,13 @@ export async function fetchProductData(url: string): Promise<ProductFromLink> {
 		}
 	}
 
-	const html = (await fetchHtml(trimmed)) || ""
+	const direct = await fetchHtml(trimmed)
+	const html = direct.html || ""
 	const usableHtml =
-		html && !isBlockedProductHtml(html) ? html : (await fetchHtml(translateProxyUrl(trimmed))) || html
+		html && !isBlockedProductHtml(html) ? html : (await fetchHtml(translateProxyUrl(trimmed))).html || html
 
 	if (!usableHtml) {
-		return result
+		return direct.blocked ? { ...result, blocked: true } : result
 	}
 
 	return {

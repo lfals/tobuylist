@@ -45,11 +45,13 @@ function AddLinkForm({ itemId }: { itemId: number }) {
 	const [isSaving, startSaving] = useTransition()
 	const [isFetching, setIsFetching] = useState(false)
 	const [priceNotFound, setPriceNotFound] = useState(false)
+	const [blocked, setBlocked] = useState(false)
 	const priceTouched = useRef(false)
 
 	// Ao colar um link válido, busca só o preço da loja (nome e imagem já vêm do primeiro link do item).
 	useEffect(() => {
 		setPriceNotFound(false)
+		setBlocked(false)
 		const trimmed = link.trim()
 		if (!isValidUrl(trimmed)) {
 			setIsFetching(false)
@@ -66,6 +68,7 @@ function AddLinkForm({ itemId }: { itemId: number }) {
 				}
 				const cents = priceToCents(product.price)
 				if (cents == null) {
+					setBlocked(Boolean(product.blocked))
 					setPriceNotFound(true)
 				} else if (!priceTouched.current) {
 					setPrice(formatNumber(String(cents)))
@@ -143,7 +146,7 @@ function AddLinkForm({ itemId }: { itemId: number }) {
 				</Button>
 			</div>
 			{isFetching ? <p className="text-sm text-muted-foreground">{t("fetchingPrice")}</p> : null}
-			{priceNotFound && !isFetching ? <p className="text-sm text-muted-foreground">{t("priceNotFound")}</p> : null}
+			{priceNotFound && !isFetching ? <p className="text-sm text-muted-foreground">{blocked ? t("siteBlocked") : t("priceNotFound")}</p> : null}
 			{error ? <p className="text-sm text-destructive">{error}</p> : null}
 		</form>
 	)

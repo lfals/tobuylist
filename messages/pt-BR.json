@@ -239,6 +239,7 @@
   },
   "ItemForm": {
     "multiStoreNote": "Este item tem várias lojas. Link, loja e preço são gerenciados em \"Ver links e preços\", ao clicar no card.",
+    "siteBlocked": "Essa loja bloqueia a busca automática de dados. Preencha o nome e o preço manualmente.",
     "link": "Link",
     "linkPlaceholder": "https://loja.com.br/produto",
     "item": "Item",
@@ -298,6 +299,7 @@
     "empty": "Sem variações até agora. O preço é conferido ao abrir a lista, no máximo uma vez por dia.",
     "noLink": "Este item não tem link, então o preço só muda se você editar.",
     "failed": "Não consegui conferir o preço por este link. Tentaremos de novo mais tarde.",
+    "blocked": "Essa loja bloqueia a busca automática de preço. Atualize o preço manualmente quando quiser.",
     "newPrices": "Novos preços disponíveis",
     "refresh": "Atualizar",
     "sourceInitial": "Cadastro",
@@ -319,6 +321,7 @@
     "saveError": "Não foi possível salvar. Esse link já pode estar cadastrado.",
     "deleteError": "Não foi possível remover o link.",
     "fetchingPrice": "Buscando o preço…",
-    "priceNotFound": "Não achamos o preço nessa loja. Informe manualmente."
+    "priceNotFound": "Não achamos o preço nessa loja. Informe manualmente.",
+    "siteBlocked": "Essa loja bloqueia a busca automática. Informe o preço manualmente."
   }
 }

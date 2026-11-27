@@ -10,10 +10,12 @@ import type { ItemFormValues } from "@/components/lists/formSchema"
 export function useAutofillFromLink(form: UseFormReturn<ItemFormValues>, isOpen: boolean) {
 	const link = form.watch("link")
 	const [isFetching, setIsFetching] = useState(false)
+	const [blocked, setBlocked] = useState(false)
 	const requestId = useRef(0)
 
 	useEffect(() => {
 		const currentRequest = ++requestId.current
+		setBlocked(false)
 
 		if (!isOpen) {
 			setIsFetching(false)
@@ -49,6 +51,7 @@ export function useAutofillFromLink(form: UseFormReturn<ItemFormValues>, isOpen:
 				if (currentRequest !== requestId.current) {
 					return
 				}
+				setBlocked(Boolean(product.blocked))
 				if (product.name) {
 					form.setValue("name", product.name, { shouldValidate: true })
 				}
@@ -73,5 +76,5 @@ export function useAutofillFromLink(form: UseFormReturn<ItemFormValues>, isOpen:
 		}
 	}, [form, isOpen, link])
 
-	return { isFetching }
+	return { isFetching, blocked }
 }

@@ -30,7 +30,7 @@ export const listItemsTable = sqliteTable("listItems", {
     imageUrl: text(),
 
     priceCheckedAt: int(),
-    priceCheckStatus: text({ enum: ["ok", "failed"] }),
+    priceCheckStatus: text({ enum: ["ok", "failed", "blocked"] }),
     priceCheckFailures: int().notNull().default(0),
 
     createdAt: int().notNull().default(sql`CURRENT_TIMESTAMP`),

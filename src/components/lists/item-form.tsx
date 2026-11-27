@@ -33,7 +33,7 @@ export function NewItemForm({
 	children: NewItemFormChildren
 }) {
 	const t = useTranslations("ItemForm")
-	const { isFetching } = useAutofillFromLink(form, isOpen && !lockOffer)
+	const { isFetching, blocked } = useAutofillFromLink(form, isOpen && !lockOffer)
 	const actions = typeof children === "function" ? children({ isFetching }) : children
 
 	return (
@@ -72,6 +72,7 @@ export function NewItemForm({
 								/>
 							</FormControl>
 							<FormMessage />
+							{blocked ? <p className="text-sm text-muted-foreground">{t("siteBlocked")}</p> : null}
 						</FormItem>
 					)}
 				/>

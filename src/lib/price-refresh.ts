@@ -85,6 +85,7 @@ export async function refreshItemPrice(item: ItemRow, deadline = Number.POSITIVE
 	const scraped = new Map<number, { link: string; price: number }>()
 	let truncated = false
 	let attempted = 0
+	let blockedCount = 0
 	for (const [index, target] of targets.entries()) {
 		if (index > 0) {
 			await sleep(SAME_HOST_DELAY_MS)
@@ -95,7 +96,11 @@ export async function refreshItemPrice(item: ItemRow, deadline = Number.POSITIVE
 		}
 		attempted++
 		try {
-			const next = priceToCents((await fetchProductData(target.link)).price)
+			const product = await fetchProductData(target.link)
+			if (product.blocked) {
+				blockedCount++
+			}
+			const next = priceToCents(product.price)
 			if (next != null && isPlausiblePrice(target.price, next)) {
 				scraped.set(target.id, { link: target.link, price: next })
 			}
@@ -116,7 +121,8 @@ export async function refreshItemPrice(item: ItemRow, deadline = Number.POSITIVE
 		}
 		await db
 			.update(listItemsTable)
-			.set({ priceCheckStatus: "failed", priceCheckFailures: item.priceCheckFailures + 1 })
+			// "blocked": a loja recusa busca automática (ex.: Cloudflare). O backoff é o mesmo da falha, só a mensagem muda.
+			.set({ priceCheckStatus: blockedCount === attempted ? "blocked" : "failed", priceCheckFailures: item.priceCheckFailures + 1 })
 			// Só se o carimbo ainda é o desta checagem: uma edição de link (que o zera) não herda a falha do link antigo.
 			.where(and(eq(listItemsTable.id, item.id), eq(listItemsTable.priceCheckedAt, now)))
 		return "failed"
