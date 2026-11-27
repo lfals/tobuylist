@@ -13,7 +13,7 @@ function ItemRowComponent(props: ItemCardProps) {
 			value={props.item}
 			dragListener={false}
 			dragControls={props.canEdit ? controls : undefined}
-			className={itemCardClassName(props.item, props.showImage ?? true)}
+			className={itemCardClassName(props.item, props.showImage ?? true, props.canEdit)}
 		>
 			<ItemCardBody
 				{...props}

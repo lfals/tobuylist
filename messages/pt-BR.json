@@ -1,5 +1,6 @@
 {
   "Common": {
+    "addedOn": "Adicionado em {date}",
     "add": "Adicionar",
     "cancel": "Cancelar",
     "close": "Fechar",
