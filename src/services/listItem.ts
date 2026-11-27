@@ -1,11 +1,12 @@
 'use server'
 
 import db from "@/db/drizzle"
-import { listItemInsertSchema, listItemsTable } from "@/db/schema"
+import { itemLinksTable, listItemInsertSchema, listItemsTable } from "@/db/schema"
 import { requireSignedIn, requireUserId } from "@/lib/current-user"
-import { recordInitialPrice, recordManualPrice } from "@/lib/price-refresh"
+import { reconcileEdit, recordInitialPrice, syncLinksAndRecord } from "@/lib/price-refresh"
 import { storeFromUrl } from "@/lib/storeFromUrl"
 import { assertCanEditItems, assertCanEditList, revalidateList } from "@/services/list-access"
+import { ensureLinks, seedFirstLink, storeForLink } from "@/services/item-links"
 import { eq } from "drizzle-orm"
 import { z } from "zod"
 
@@ -128,6 +129,7 @@ export const createListItem = async (listId: string, data: z.infer<typeof listIt
     const price = Number(data.price)
     const listItem = await db.insert(listItemsTable).values({ ...serverManagedOmitted(data), price, listId }).returning()
     await recordInitialPrice(listItem[0].id, price)
+    await seedFirstLink(listItem[0])
 
     revalidateList(listId)
     return listItem
@@ -156,17 +158,61 @@ export const editListItem = async (listId: string, data: z.infer<typeof listItem
     const price = Number(String(data.price).replace("R$ ", "").replace(",", "").replace(".", ""))
 
     const listItem = await db.update(listItemsTable).set({ ...serverManagedOmitted(data), listId: realListId, price }).where(eq(listItemsTable.id, data.id!)).returning()
-
-    if (current && price !== current.price) {
-        // Edição manual do preço: vira o novo preço de referência e entra no histórico.
-        await recordManualPrice(data.id!, price)
-    } else if (current && (data.link ?? null) !== (current.link ?? null)) {
-        // Link novo: força uma checagem na próxima abertura da lista.
-        await db.update(listItemsTable).set({ priceCheckedAt: null, priceCheckStatus: null, priceCheckFailures: 0 }).where(eq(listItemsTable.id, data.id!))
-    }
+    const synced = current ? await reconcileEdit(data.id!, current, listItem[0]) : listItem[0]
 
     revalidateList(realListId)
-    return listItem
+    return [synced]
+}
+
+/** Cadastra mais um link (e preço) para um item que já existe. Não busca dados do produto. */
+export const addItemLink = async (itemId: number, data: { link: string; price: number }) => {
+    const userId = await requireUserId()
+    const lists = await assertCanEditItems([itemId], userId)
+
+    const link = z.string().trim().url().parse(data.link)
+    const price = z.number().int().min(0).parse(data.price)
+
+    await ensureLinks(itemId)
+    await db.insert(itemLinksTable).values({ itemId, link, store: storeForLink(link), price })
+    await syncLinksAndRecord(itemId)
+
+    revalidateList(lists.get(itemId)!)
+}
+
+export const editItemLink = async (linkId: number, data: { link: string; price: number }) => {
+    const userId = await requireUserId()
+    const [row] = await db.select().from(itemLinksTable).where(eq(itemLinksTable.id, linkId)).limit(1)
+    if (!row) {
+        throw new Error("Not found")
+    }
+    const lists = await assertCanEditItems([row.itemId], userId)
+
+    const link = z.string().trim().url().parse(data.link)
+    const price = z.number().int().min(0).parse(data.price)
+
+    await db.update(itemLinksTable).set({ link, store: link === row.link ? row.store : storeForLink(link), price }).where(eq(itemLinksTable.id, linkId))
+    await syncLinksAndRecord(row.itemId)
+
+    revalidateList(lists.get(row.itemId)!)
+}
+
+export const deleteItemLink = async (linkId: number) => {
+    const userId = await requireUserId()
+    const [row] = await db.select().from(itemLinksTable).where(eq(itemLinksTable.id, linkId)).limit(1)
+    if (!row) {
+        return
+    }
+    const lists = await assertCanEditItems([row.itemId], userId)
+
+    const siblings = await db.select({ id: itemLinksTable.id }).from(itemLinksTable).where(eq(itemLinksTable.itemId, row.itemId))
+    if (siblings.length <= 1) {
+        throw new Error("Item precisa de ao menos um link")
+    }
+
+    await db.delete(itemLinksTable).where(eq(itemLinksTable.id, linkId))
+    await syncLinksAndRecord(row.itemId)
+
+    revalidateList(lists.get(row.itemId)!)
 }
 
 export const setItemImage = async (listId: string, itemId: number, imageUrl: string) => {

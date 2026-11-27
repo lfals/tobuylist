@@ -4,6 +4,7 @@ import { requireUserId } from "@/lib/current-user"
 import type { ListDashboard, ListDetails, ListItemRecord, ListSummary, SidebarList } from "@/types/list"
 import { and, asc, eq, sql } from "drizzle-orm"
 import { cache } from "react"
+import { attachLinks } from "@/services/item-links"
 
 function totalFromItems(items: { price: number; quantity: number; isActive: number }[]) {
 	let total = 0
@@ -85,7 +86,7 @@ export const getListItems = cache(async (listId: string): Promise<ListItemRecord
 		return null
 	}
 
-	return items
+	return attachLinks(items)
 })
 
 export const getListDetails = cache(async (listId: string): Promise<ListDetails | null> => {
@@ -107,7 +108,7 @@ export const getListDetails = cache(async (listId: string): Promise<ListDetails 
 		return null
 	}
 
-	return { ...list[0], items, totalValue: totalFromItems(items) }
+	return { ...list[0], items: await attachLinks(items), totalValue: totalFromItems(items) }
 })
 
 export const getListDashboard = cache(async (): Promise<ListDashboard> => {
@@ -178,7 +179,7 @@ export const getSharedListItems = cache(async (listId: string): Promise<ListItem
 		return null
 	}
 
-	return items
+	return attachLinks(items)
 })
 
 export const getSharedList = cache(async (listId: string): Promise<ListDetails | null> => {
@@ -199,7 +200,7 @@ export const getSharedList = cache(async (listId: string): Promise<ListDetails |
 		return null
 	}
 
-	return { ...list[0], items, totalValue: totalFromItems(items) }
+	return { ...list[0], items: await attachLinks(items), totalValue: totalFromItems(items) }
 })
 
 export const getSharedLists = cache(async (): Promise<SidebarList[]> => {
@@ -253,5 +254,5 @@ export const getSharedListDetailsItems = cache(async (listId: string): Promise<L
 		return null
 	}
 
-	return items
+	return attachLinks(items)
 })

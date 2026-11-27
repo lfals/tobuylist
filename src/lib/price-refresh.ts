@@ -1,5 +1,5 @@
 import db from "@/db/drizzle"
-import { listItemsTable, listsTable, priceHistoryTable } from "@/db/schema"
+import { itemLinksTable, listItemsTable, listsTable, priceHistoryTable } from "@/db/schema"
 import { fetchProductData } from "@/lib/product-fetch"
 import {
 	CRON_TTL_MS,
@@ -8,6 +8,7 @@ import {
 	priceToCents,
 	type PriceHistoryPayload,
 } from "@/lib/price-history"
+import { applyItemEdit, cheapestLink, syncItemFromLinks } from "@/services/item-links"
 import { and, asc, count, eq, isNull, lt, or } from "drizzle-orm"
 
 /**
@@ -75,15 +76,35 @@ export async function refreshItemPrice(item: ItemRow): Promise<RefreshOutcome> {
 
 	await ensureBaseline(item)
 
-	let next: number | null = null
-	try {
-		const product = await fetchProductData(item.link)
-		next = priceToCents(product.price)
-	} catch {
-		next = null
+	// Cada link cadastrado tem o próprio preço; itens antigos, sem registros, só têm o link da própria linha.
+	const links = await db.select().from(itemLinksTable).where(eq(itemLinksTable.itemId, item.id)).orderBy(asc(itemLinksTable.id))
+	const targets = links.length > 0 ? links : [{ id: 0, link: item.link, store: item.store, price: item.price }]
+
+	let anyChecked = false
+	const current = targets.map((target) => ({ ...target }))
+	for (const [index, target] of targets.entries()) {
+		if (index > 0) {
+			await sleep(SAME_HOST_DELAY_MS)
+		}
+		let next: number | null = null
+		try {
+			next = priceToCents((await fetchProductData(target.link)).price)
+		} catch {
+			next = null
+		}
+		if (next == null || !isPlausiblePrice(target.price, next)) {
+			continue
+		}
+		anyChecked = true
+		if (next !== target.price) {
+			current[index].price = next
+			if (target.id > 0) {
+				await db.update(itemLinksTable).set({ price: next }).where(eq(itemLinksTable.id, target.id))
+			}
+		}
 	}
 
-	if (next == null || !isPlausiblePrice(item.price, next)) {
+	if (!anyChecked) {
 		await db
 			.update(listItemsTable)
 			.set({ priceCheckStatus: "failed", priceCheckFailures: item.priceCheckFailures + 1 })
@@ -92,15 +113,17 @@ export async function refreshItemPrice(item: ItemRow): Promise<RefreshOutcome> {
 	}
 
 	const okState = { priceCheckedAt: now, priceCheckStatus: "ok" as const, priceCheckFailures: 0 }
+	// O preço do item é sempre o do link mais barato.
+	const best = cheapestLink(current)!
 
-	if (next === item.price) {
-		await db.update(listItemsTable).set(okState).where(eq(listItemsTable.id, item.id))
+	if (best.price === item.price) {
+		await db.update(listItemsTable).set({ ...okState, link: best.link, store: best.store ?? item.store }).where(eq(listItemsTable.id, item.id))
 		return "unchanged"
 	}
 
 	await db.batch([
-		db.insert(priceHistoryTable).values({ itemId: item.id, price: next, checkedAt: now, source: "scrape" }),
-		db.update(listItemsTable).set({ ...okState, price: next }).where(eq(listItemsTable.id, item.id)),
+		db.insert(priceHistoryTable).values({ itemId: item.id, price: best.price, checkedAt: now, source: "scrape" }),
+		db.update(listItemsTable).set({ ...okState, price: best.price, link: best.link, store: best.store ?? item.store }).where(eq(listItemsTable.id, item.id)),
 	])
 	return "updated"
 }
@@ -271,4 +294,39 @@ export async function getPriceHistory(itemId: number, userId: string | null): Pr
 		},
 		points,
 	}
+}
+
+
+/** Recalcula o item a partir dos links (mais barato) e, se o preço dele mudou, registra no histórico. */
+export async function syncLinksAndRecord(itemId: number) {
+	const [before] = await db.select({ price: listItemsTable.price }).from(listItemsTable).where(eq(listItemsTable.id, itemId)).limit(1)
+	await syncItemFromLinks(itemId)
+	const [after] = await db.select({ price: listItemsTable.price }).from(listItemsTable).where(eq(listItemsTable.id, itemId)).limit(1)
+	if (before && after && before.price !== after.price) {
+		await recordManualPrice(itemId, after.price)
+	}
+}
+
+/**
+ * O item foi editado (formulário ou API mobile). Reflete link/loja/preço no registro de `itemLinks` que
+ * representava o item, recalcula o mais barato e mantém o histórico e a checagem de preço coerentes.
+ */
+export async function reconcileEdit(
+	itemId: number,
+	before: { link: string | null; price: number },
+	after: { link: string | null; store: string | null; price: number },
+) {
+	await applyItemEdit(itemId, before, after)
+	const [synced] = await db.select().from(listItemsTable).where(eq(listItemsTable.id, itemId)).limit(1)
+
+	if (synced.price !== before.price) {
+		// Edição manual do preço: vira o novo preço de referência e entra no histórico.
+		await recordManualPrice(itemId, synced.price)
+		return { ...synced, originalPrice: synced.price }
+	}
+	if ((after.link ?? null) !== (before.link ?? null)) {
+		// Link novo: força uma checagem na próxima abertura da lista.
+		await db.update(listItemsTable).set({ priceCheckedAt: null, priceCheckStatus: null, priceCheckFailures: 0 }).where(eq(listItemsTable.id, itemId))
+	}
+	return synced
 }

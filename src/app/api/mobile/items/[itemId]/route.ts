@@ -2,7 +2,7 @@ import db from "@/db/drizzle"
 import { listItemsTable } from "@/db/schema"
 import { itemInputSchema } from "@/lib/mobile-items"
 import { json, parseId, readJson, requireApiUserId, requireEditableItem, route } from "@/lib/mobile-api"
-import { recordManualPrice } from "@/lib/price-refresh"
+import { reconcileEdit } from "@/lib/price-refresh"
 import { storeFromUrl } from "@/lib/storeFromUrl"
 import { eq } from "drizzle-orm"
 import { z } from "zod"
@@ -32,15 +32,7 @@ export const PATCH = route<Context>(async (request, { params }) => {
 	}
 
 	const [updated] = await db.update(listItemsTable).set(values).where(eq(listItemsTable.id, itemId)).returning()
-	let item = updated
-
-	if (data.price !== undefined && data.price !== before.price) {
-		// Edição manual do preço: vira o novo preço de referência e entra no histórico.
-		await recordManualPrice(itemId, data.price)
-		item = { ...updated, originalPrice: data.price }
-	} else if (data.link !== undefined && (data.link || null) !== (before.link ?? null)) {
-		await db.update(listItemsTable).set({ priceCheckedAt: null, priceCheckStatus: null, priceCheckFailures: 0 }).where(eq(listItemsTable.id, itemId))
-	}
+	const item = await reconcileEdit(itemId, before, updated)
 
 	return json({ item })
 })

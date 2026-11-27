@@ -7,6 +7,7 @@ import type { ListItemRecord } from "@/types/list"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useRef, useState, useTransition } from "react"
+import { ItemLinksDialog } from "./item-links-dialog"
 import { DeleteItemDialog, EditItemDialog } from "./item-dialogs"
 import { StaticItemRow } from "./item-card"
 
@@ -43,6 +44,9 @@ export default function Items({
 	const router = useRouter()
 	const { isLoaded, isSignedIn } = useAuth()
 	const refreshStartedFor = useRef<string>(undefined)
+	const [linksItemId, setLinksItemId] = useState<number | null>(null)
+	// Busca o item atual da lista para o modal refletir links adicionados/removidos.
+	const linksItem = items.find((item) => item.id === linksItemId) ?? null
 	const lastSavedOrder = useRef(orderSignature(initialItems))
 	const persistTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
 	const [, startMarking] = useTransition()
@@ -122,6 +126,7 @@ export default function Items({
 		onDelete: setDeletingItem,
 		onMark: handleMark,
 		onHistory: handleHistory,
+		onOpenLinks: (item: ListItemRecord) => setLinksItemId(item.id),
 		onImageError: showImage && canEdit ? handleImageError : undefined,
 	}
 
@@ -137,6 +142,16 @@ export default function Items({
 				</div>
 			)}
 			{historyItem ? <PriceHistoryDialog item={historyItem} open={historyOpen} onOpenChange={setHistoryOpen} /> : null}
+			<ItemLinksDialog
+				item={linksItem}
+				canEdit={canEdit}
+				open={linksItem !== null}
+				onOpenChange={(open) => {
+					if (!open) {
+						setLinksItemId(null)
+					}
+				}}
+			/>
 			{canEdit ? (
 				<>
 					<EditItemDialog

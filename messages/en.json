@@ -304,5 +304,15 @@
     "sourceScrape": "Checked at the store",
     "chartLabel": "Price history chart for {name}",
     "originalPrice": "Original price: {price}"
+  },
+  "ItemLinks": {
+    "description": "Current price at each store. The lowest one shows on the card.",
+    "addTitle": "Add another store",
+    "add": "Add",
+    "cheapest": "Lowest price",
+    "invalidLink": "Link must be a valid URL.",
+    "empty": "No links added.",
+    "stores": "{count} stores",
+    "viewLinks": "View links and prices"
   }
 }

@@ -39,6 +39,18 @@ export const listItemsTable = sqliteTable("listItems", {
     order: int().notNull().default(0),
 });
 
+/** Um link/preço de uma loja para o mesmo item. `listItems.price/link/store` guardam o mais barato. */
+export const itemLinksTable = sqliteTable("itemLinks", {
+    id: int().primaryKey({ autoIncrement: true }),
+    itemId: int().notNull().references(() => listItemsTable.id, { onDelete: 'cascade' }),
+
+    link: text().notNull(),
+    store: text(),
+    price: int().notNull(),
+
+    createdAt: int().notNull().default(sql`CURRENT_TIMESTAMP`),
+})
+
 
 export const priceHistoryTable = sqliteTable("priceHistory", {
     id: int().primaryKey({ autoIncrement: true }),

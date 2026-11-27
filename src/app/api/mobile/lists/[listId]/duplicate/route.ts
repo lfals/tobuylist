@@ -1,6 +1,7 @@
 import db from "@/db/drizzle"
-import { listItemsTable, listsTable } from "@/db/schema"
+import { itemLinksTable, listItemsTable, listsTable } from "@/db/schema"
 import { json, requireApiUserId, requireList, route } from "@/lib/mobile-api"
+import { attachLinks } from "@/services/item-links"
 import { eq } from "drizzle-orm"
 import { randomUUID } from "node:crypto"
 
@@ -12,7 +13,7 @@ export const POST = route<Context>(async (_request, { params }) => {
 	const { listId } = await params
 	const { list } = await requireList(listId, userId)
 
-	const items = await db.select().from(listItemsTable).where(eq(listItemsTable.listId, listId))
+	const items = await attachLinks(await db.select().from(listItemsTable).where(eq(listItemsTable.listId, listId)))
 
 	const [copy] = await db
 		.insert(listsTable)
@@ -26,9 +27,17 @@ export const POST = route<Context>(async (_request, { params }) => {
 		.returning()
 
 	if (items.length > 0) {
-		await db.insert(listItemsTable).values(
-			items.map(({ id: _id, ...rest }) => ({ ...rest, listId: copy.id })),
+		const created = await db
+			.insert(listItemsTable)
+			.values(items.map(({ id: _id, links: _links, ...rest }) => ({ ...rest, listId: copy.id })))
+			.returning({ id: listItemsTable.id })
+
+		const links = items.flatMap((item, index) =>
+			item.links.map(({ id: _id, itemId: _itemId, ...rest }) => ({ ...rest, itemId: created[index].id })),
 		)
+		if (links.length > 0) {
+			await db.insert(itemLinksTable).values(links)
+		}
 	}
 
 	return json({ list: copy }, { status: 201 })

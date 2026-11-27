@@ -1,14 +1,33 @@
 'use server'
 
 import db from "@/db/drizzle";
-import { listItemsTable, listsTable, sharedListsTable } from "@/db/schema";
+import { itemLinksTable, listItemsTable, listsTable, sharedListsTable } from "@/db/schema";
 import { requireUserId } from "@/lib/current-user";
+import type { ListItemRecord } from "@/types/list";
 import { getListAccess, revalidateList } from "@/services/list-access";
 import { getListDetails, getSharedList } from "@/services/lists-queries";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { randomUUID } from 'node:crypto'
+
+/** Copia os itens (e os links de cada um) para a lista nova. */
+async function copyItems(items: ListItemRecord[], listId: string) {
+    if (items.length === 0) {
+        return
+    }
+
+    const created = await db.insert(listItemsTable).values(
+        items.map(({ id: _id, links: _links, ...rest }) => ({ ...rest, listId })),
+    ).returning({ id: listItemsTable.id })
+
+    const links = items.flatMap((item, index) =>
+        item.links.map(({ id: _id, itemId: _itemId, ...rest }) => ({ ...rest, itemId: created[index].id })),
+    )
+    if (links.length > 0) {
+        await db.insert(itemLinksTable).values(links)
+    }
+}
 
 export async function editList(list: Omit<typeof listsTable.$inferInsert, 'id' | 'userId'>, listId: string) {
     const userId = await requireUserId()
@@ -55,13 +74,7 @@ export async function duplicateList(listId: string) {
         shared: list.shared,
     })
 
-    const newListItems = list.items.map(item => {
-        const { id, ...rest } = item
-        return { ...rest, listId: newList.id }
-    })
-    if (newListItems.length > 0) {
-        await db.insert(listItemsTable).values(newListItems)
-    }
+    await copyItems(list.items, newList.id)
 
     revalidatePath(`/app`)
     redirect(`/app/${newList.id}`)
@@ -106,13 +119,7 @@ export async function duplicateSharedList(listId: string) {
         shared: list.shared,
     })
 
-    const newListItems = list.items.map(item => {
-        const { id, ...rest } = item
-        return { ...rest, listId: newList.id }
-    })
-    if (newListItems.length > 0) {
-        await db.insert(listItemsTable).values(newListItems)
-    }
+    await copyItems(list.items, newList.id)
 
     revalidatePath(`/app`)
     redirect(`/app/${newList.id}`)

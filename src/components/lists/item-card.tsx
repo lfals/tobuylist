@@ -14,7 +14,7 @@ import type { ListItemRecord } from "@/types/list"
 import { GripIcon, ImageOffIcon, LineChartIcon, MoreHorizontalIcon } from "lucide-react"
 import { useLocale, useTranslations } from "next-intl"
 import Image from "next/image"
-import type { ReactNode } from "react"
+import type { KeyboardEvent, ReactNode } from "react"
 import { memo } from "react"
 
 export type ItemCardProps = {
@@ -25,6 +25,7 @@ export type ItemCardProps = {
 	onDelete: (item: ListItemRecord) => void
 	onMark: (item: ListItemRecord) => void
 	onHistory: (item: ListItemRecord) => void
+	onOpenLinks: (item: ListItemRecord) => void
 	onImageError?: (item: ListItemRecord) => void
 	dragHandle?: ReactNode
 }
@@ -53,6 +54,7 @@ export function ItemCardBody({
 	onDelete,
 	onMark,
 	onHistory,
+	onOpenLinks,
 	onImageError,
 	dragHandle,
 }: ItemCardProps) {
@@ -62,12 +64,21 @@ export function ItemCardBody({
 	const isCheaper = hasChange && item.price < (item.originalPrice ?? 0)
 	const locale = useLocale()
 	const addedAt = formatAddedDate(item.createdAt, locale)
+	const tLinks = useTranslations("ItemLinks")
+	const storeCount = item.links.length
+	const openLinks = () => onOpenLinks(item)
+	const openLinksOnKey = (event: KeyboardEvent<HTMLElement>) => {
+		if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) {
+			event.preventDefault()
+			openLinks()
+		}
+	}
 
 	return (
 		<>
 			{canEdit ? dragHandle : null}
 			{showImage ? (
-				<div className="h-full aspect-square rounded-sm flex items-center justify-center">
+				<div className="h-full aspect-square rounded-sm flex items-center justify-center cursor-pointer" onClick={openLinks}>
 					{item.imageUrl ? (
 						<Image
 							src={item.imageUrl}
@@ -83,10 +94,17 @@ export function ItemCardBody({
 					)}
 				</div>
 			) : null}
-			<div className="flex flex-col gap-2 select-none min-w-0">
+			<div
+				className="flex flex-col gap-2 select-none min-w-0 cursor-pointer"
+				role="button"
+				tabIndex={0}
+				aria-label={`${item.name} - ${tLinks("viewLinks")}`}
+				onClick={openLinks}
+				onKeyDown={openLinksOnKey}
+			>
 				<div className="flex flex-col">
 					<h1 className="font-bold truncate">{item.name}</h1>
-					<a href={item.link ?? "#"} target="_blank" className="flex items-center gap-2">
+					<a href={item.link ?? "#"} target="_blank" className="flex items-center gap-2" onClick={(event) => event.stopPropagation()}>
 						{item.link ? (
 							<Image
 								src={`https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${item.link}&size=24#refinements`}
@@ -95,7 +113,10 @@ export function ItemCardBody({
 								height={16}
 							/>
 						) : null}
-						<p>{item.store ?? <>&nbsp;</>}</p>
+						<p>
+							{item.store ?? <>&nbsp;</>}
+							{storeCount > 1 ? <span className="text-muted-foreground"> · {tLinks("stores", { count: storeCount })}</span> : null}
+						</p>
 					</a>
 				</div>
 				<h1 className="flex flex-wrap items-baseline gap-x-2">

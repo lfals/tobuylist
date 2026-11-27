@@ -304,5 +304,15 @@
     "sourceScrape": "Conferido na loja",
     "chartLabel": "Gráfico do histórico de preço de {name}",
     "originalPrice": "Preço original: {price}"
+  },
+  "ItemLinks": {
+    "description": "Preço atual em cada loja. O menor aparece no card.",
+    "addTitle": "Adicionar outra loja",
+    "add": "Adicionar",
+    "cheapest": "Menor preço",
+    "invalidLink": "Link deve ser uma URL válida.",
+    "empty": "Nenhum link cadastrado.",
+    "stores": "{count} lojas",
+    "viewLinks": "Ver links e preços"
   }
 }
