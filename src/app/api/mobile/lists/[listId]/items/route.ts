@@ -2,6 +2,7 @@ import db from "@/db/drizzle"
 import { listItemsTable } from "@/db/schema"
 import { getItemImageSafe, itemInputSchema } from "@/lib/mobile-items"
 import { json, readJson, requireApiUserId, requireEditableList, route } from "@/lib/mobile-api"
+import { recordInitialPrice } from "@/lib/price-refresh"
 import { storeFromUrl } from "@/lib/storeFromUrl"
 
 type Context = { params: Promise<{ listId: string }> }
@@ -29,5 +30,6 @@ export const POST = route<Context>(async (request, { params }) => {
 		})
 		.returning()
 
+	await recordInitialPrice(item.id, item.price)
 	return json({ item }, { status: 201 })
 })

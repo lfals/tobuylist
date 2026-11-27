@@ -18,6 +18,8 @@ const isI18nRoute = createRouteMatcher([
 const isPublicRoute = createRouteMatcher([
     "/s/(.*)",
     "/api/mobile(.*)",
+    // Cron: autenticado por CRON_SECRET dentro do handler.
+    "/api/cron(.*)",
     "/.well-known(.*)",
     "/robots.txt",
     "/sitemap.xml",

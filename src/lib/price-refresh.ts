@@ -1,0 +1,259 @@
+import db from "@/db/drizzle"
+import { listItemsTable, listsTable, priceHistoryTable } from "@/db/schema"
+import { fetchProductData } from "@/lib/product-fetch"
+import {
+	CRON_TTL_MS,
+	isDueForRefresh,
+	isPlausiblePrice,
+	priceToCents,
+	type PriceHistoryPayload,
+} from "@/lib/price-history"
+import { and, asc, count, eq, isNull, lt, or } from "drizzle-orm"
+
+/**
+ * Refresh de preço sem agente: reaproveita o extrator determinístico (Shopify, Mercado Livre, JSON-LD, og:price...).
+ * Só importe daqui em código de servidor (rotas, cron, server actions).
+ */
+
+type ItemRow = typeof listItemsTable.$inferSelect
+
+export type RefreshOutcome = "updated" | "unchanged" | "failed" | "skipped"
+
+const SAME_HOST_DELAY_MS = 400
+
+/** Itens antigos (ou duplicados) ainda sem preço de referência: grava o ponto inicial e a referência uma única vez. */
+async function ensureBaseline(item: ItemRow) {
+	if (item.originalPrice != null) {
+		return
+	}
+	const [{ total }] = await db
+		.select({ total: count() })
+		.from(priceHistoryTable)
+		.where(eq(priceHistoryTable.itemId, item.id))
+	if (total === 0) {
+		await db.insert(priceHistoryTable).values({
+			itemId: item.id,
+			price: item.price,
+			checkedAt: toEpoch(item.createdAt) ?? Date.now(),
+			source: "initial",
+		})
+	}
+	await db.update(listItemsTable).set({ originalPrice: item.price }).where(eq(listItemsTable.id, item.id))
+}
+
+/** `createdAt` das tabelas antigas é texto ("YYYY-MM-DD HH:MM:SS", UTC) ou número. */
+function toEpoch(value: unknown): number | null {
+	if (typeof value === "number") {
+		return Number.isFinite(value) ? value : null
+	}
+	if (typeof value === "string") {
+		const parsed = Date.parse(value.includes("T") ? value : `${value.replace(" ", "T")}Z`)
+		return Number.isNaN(parsed) ? null : parsed
+	}
+	return null
+}
+
+/** Reserva o item de forma atômica: só quem ler o mesmo `priceCheckedAt` consegue atualizar (evita refresh duplicado entre abas). */
+async function claim(item: ItemRow, now: number) {
+	const sameStamp = item.priceCheckedAt == null ? isNull(listItemsTable.priceCheckedAt) : eq(listItemsTable.priceCheckedAt, item.priceCheckedAt)
+	const rows = await db
+		.update(listItemsTable)
+		.set({ priceCheckedAt: now })
+		.where(and(eq(listItemsTable.id, item.id), sameStamp))
+		.returning({ id: listItemsTable.id })
+	return rows.length > 0
+}
+
+export async function refreshItemPrice(item: ItemRow): Promise<RefreshOutcome> {
+	if (!item.link || !item.isActive) {
+		return "skipped"
+	}
+	const now = Date.now()
+	if (!(await claim(item, now))) {
+		return "skipped"
+	}
+
+	await ensureBaseline(item)
+
+	let next: number | null = null
+	try {
+		const product = await fetchProductData(item.link)
+		next = priceToCents(product.price)
+	} catch {
+		next = null
+	}
+
+	if (next == null || !isPlausiblePrice(item.price, next)) {
+		await db
+			.update(listItemsTable)
+			.set({ priceCheckStatus: "failed", priceCheckFailures: item.priceCheckFailures + 1 })
+			.where(eq(listItemsTable.id, item.id))
+		return "failed"
+	}
+
+	const okState = { priceCheckedAt: now, priceCheckStatus: "ok" as const, priceCheckFailures: 0 }
+
+	if (next === item.price) {
+		await db.update(listItemsTable).set(okState).where(eq(listItemsTable.id, item.id))
+		return "unchanged"
+	}
+
+	await db.batch([
+		db.insert(priceHistoryTable).values({ itemId: item.id, price: next, checkedAt: now, source: "scrape" }),
+		db.update(listItemsTable).set({ ...okState, price: next }).where(eq(listItemsTable.id, item.id)),
+	])
+	return "updated"
+}
+
+export type RefreshSummary = Record<RefreshOutcome, number>
+
+function emptySummary(): RefreshSummary {
+	return { updated: 0, unchanged: 0, failed: 0, skipped: 0 }
+}
+
+function hostOf(link: string | null) {
+	try {
+		return new URL(link ?? "").hostname
+	} catch {
+		return ""
+	}
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+/**
+ * Atualiza vários itens. Itens do mesmo domínio rodam em sequência (com pausa) para não parecer ataque ao site;
+ * domínios diferentes rodam em paralelo, até `concurrency`. Para de iniciar novos itens depois de `deadline`.
+ */
+export async function refreshItems(items: ItemRow[], options: { concurrency?: number; deadline?: number } = {}) {
+	const { concurrency = 3, deadline = Number.POSITIVE_INFINITY } = options
+	const summary = emptySummary()
+
+	const queues = new Map<string, ItemRow[]>()
+	for (const item of items) {
+		const host = hostOf(item.link)
+		queues.set(host, [...(queues.get(host) ?? []), item])
+	}
+
+	const hosts = [...queues.values()]
+	let cursor = 0
+
+	async function worker() {
+		while (cursor < hosts.length) {
+			const queue = hosts[cursor++]
+			for (const [index, item] of queue.entries()) {
+				if (Date.now() >= deadline) {
+					return
+				}
+				if (index > 0) {
+					await sleep(SAME_HOST_DELAY_MS)
+				}
+				summary[await refreshItemPrice(item)]++
+			}
+		}
+	}
+
+	await Promise.all(Array.from({ length: Math.min(concurrency, hosts.length) }, worker))
+	return summary
+}
+
+/** Itens de uma lista que estão vencidos, os mais antigos primeiro. */
+export async function dueItemsOfList(listId: string, ttlMs: number, limit: number) {
+	const now = Date.now()
+	const rows = await db
+		.select()
+		.from(listItemsTable)
+		.where(and(eq(listItemsTable.listId, listId), eq(listItemsTable.isActive, 1)))
+		.orderBy(asc(listItemsTable.priceCheckedAt))
+	return rows.filter((item) => isDueForRefresh(item, now, ttlMs)).slice(0, limit)
+}
+
+/** Itens de todas as listas sem checagem há mais de `ttlMs` (usado pelo cron). */
+export async function dueItemsGlobal(ttlMs: number = CRON_TTL_MS, limit = 200) {
+	const now = Date.now()
+	const rows = await db
+		.select({ item: listItemsTable })
+		.from(listItemsTable)
+		.innerJoin(listsTable, eq(listsTable.id, listItemsTable.listId))
+		.where(
+			and(
+				eq(listItemsTable.isActive, 1),
+				or(isNull(listItemsTable.priceCheckedAt), lt(listItemsTable.priceCheckedAt, now - ttlMs)),
+			),
+		)
+		.orderBy(asc(listItemsTable.priceCheckedAt))
+		.limit(limit * 3)
+
+	return rows
+		.map((row) => row.item)
+		.filter((item) => isDueForRefresh(item, now, ttlMs))
+		.slice(0, limit)
+}
+
+/** Registra uma mudança manual de preço: vira o novo preço de referência e entra no histórico. */
+export async function recordManualPrice(itemId: number, price: number) {
+	const now = Date.now()
+	await db.batch([
+		db.insert(priceHistoryTable).values({ itemId, price, checkedAt: now, source: "manual" }),
+		db
+			.update(listItemsTable)
+			.set({ originalPrice: price, priceCheckedAt: now, priceCheckStatus: null, priceCheckFailures: 0 })
+			.where(eq(listItemsTable.id, itemId)),
+	])
+}
+
+/** Registra o ponto inicial de um item recém-criado. */
+export async function recordInitialPrice(itemId: number, price: number) {
+	const now = Date.now()
+	await db.batch([
+		db.insert(priceHistoryTable).values({ itemId, price, checkedAt: now, source: "initial" }),
+		db
+			.update(listItemsTable)
+			.set({ originalPrice: price, priceCheckedAt: now })
+			.where(eq(listItemsTable.id, itemId)),
+	])
+}
+
+/** Histórico de um item, se o usuário puder ver a lista (dono, ou lista compartilhada). `userId` nulo = visitante. */
+export async function getPriceHistory(itemId: number, userId: string | null): Promise<PriceHistoryPayload | null> {
+	const [row] = await db
+		.select({ item: listItemsTable, ownerId: listsTable.userId, shared: listsTable.shared })
+		.from(listItemsTable)
+		.innerJoin(listsTable, eq(listsTable.id, listItemsTable.listId))
+		.where(eq(listItemsTable.id, itemId))
+		.limit(1)
+
+	if (!row || !(row.shared || (userId && row.ownerId === userId))) {
+		return null
+	}
+
+	await ensureBaseline(row.item)
+
+	const [item, points] = await Promise.all([
+		db.select().from(listItemsTable).where(eq(listItemsTable.id, itemId)).limit(1),
+		db
+			.select({
+				id: priceHistoryTable.id,
+				price: priceHistoryTable.price,
+				checkedAt: priceHistoryTable.checkedAt,
+				source: priceHistoryTable.source,
+			})
+			.from(priceHistoryTable)
+			.where(eq(priceHistoryTable.itemId, itemId))
+			.orderBy(asc(priceHistoryTable.checkedAt), asc(priceHistoryTable.id)),
+	])
+
+	const current = item[0]
+	return {
+		item: {
+			id: current.id,
+			name: current.name,
+			price: current.price,
+			originalPrice: current.originalPrice,
+			priceCheckedAt: current.priceCheckedAt,
+			priceCheckStatus: current.priceCheckStatus,
+			hasLink: Boolean(current.link),
+		},
+		points,
+	}
+}

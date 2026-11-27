@@ -3,6 +3,7 @@
 import db from "@/db/drizzle"
 import { listItemInsertSchema, listItemsTable } from "@/db/schema"
 import { requireSignedIn, requireUserId } from "@/lib/current-user"
+import { recordInitialPrice, recordManualPrice } from "@/lib/price-refresh"
 import { storeFromUrl } from "@/lib/storeFromUrl"
 import { assertCanEditItems, assertCanEditList, revalidateList } from "@/services/list-access"
 import { eq } from "drizzle-orm"
@@ -105,6 +106,12 @@ export async function getItemImage(params: string, next?: boolean) {
     return ""
 }
 
+/** Campos de controle de preço pertencem ao servidor: o cliente (que pode ter dado velho) nunca os define. */
+function serverManagedOmitted<T extends z.infer<typeof listItemInsertSchema>>(data: T) {
+    const { originalPrice: _o, priceCheckedAt: _c, priceCheckStatus: _s, priceCheckFailures: _f, ...rest } = data
+    return rest
+}
+
 export const createListItem = async (listId: string, data: z.infer<typeof listItemInsertSchema>) => {
     const userId = await requireUserId()
     await assertCanEditList(listId, userId)
@@ -118,7 +125,9 @@ export const createListItem = async (listId: string, data: z.infer<typeof listIt
         data.imageUrl = await getItemImage(data.name)
     }
 
-    const listItem = await db.insert(listItemsTable).values({ ...data, price: Number(data.price), listId }).returning()
+    const price = Number(data.price)
+    const listItem = await db.insert(listItemsTable).values({ ...serverManagedOmitted(data), price, listId }).returning()
+    await recordInitialPrice(listItem[0].id, price)
 
     revalidateList(listId)
     return listItem
@@ -143,10 +152,28 @@ export const editListItem = async (listId: string, data: z.infer<typeof listItem
         data.store = storeFromUrl(data.link)
     }
 
-    const listItem = await db.update(listItemsTable).set({ ...data, listId: realListId, price: Number(String(data.price).replace("R$ ", "").replace(",", "").replace(".", "")) }).where(eq(listItemsTable.id, data.id!)).returning()
+    const [current] = await db.select().from(listItemsTable).where(eq(listItemsTable.id, data.id!)).limit(1)
+    const price = Number(String(data.price).replace("R$ ", "").replace(",", "").replace(".", ""))
+
+    const listItem = await db.update(listItemsTable).set({ ...serverManagedOmitted(data), listId: realListId, price }).where(eq(listItemsTable.id, data.id!)).returning()
+
+    if (current && price !== current.price) {
+        // Edição manual do preço: vira o novo preço de referência e entra no histórico.
+        await recordManualPrice(data.id!, price)
+    } else if (current && (data.link ?? null) !== (current.link ?? null)) {
+        // Link novo: força uma checagem na próxima abertura da lista.
+        await db.update(listItemsTable).set({ priceCheckedAt: null, priceCheckStatus: null, priceCheckFailures: 0 }).where(eq(listItemsTable.id, data.id!))
+    }
 
     revalidateList(realListId)
     return listItem
+}
+
+export const setItemImage = async (listId: string, itemId: number, imageUrl: string) => {
+    const userId = await requireUserId()
+    const lists = await assertCanEditItems([itemId], userId)
+    await db.update(listItemsTable).set({ imageUrl }).where(eq(listItemsTable.id, itemId))
+    revalidateList(lists.get(itemId) ?? listId)
 }
 
 export const markListItem = async (listId: string, itemId: number, isActive: number) => {
