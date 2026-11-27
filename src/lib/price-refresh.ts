@@ -117,7 +117,8 @@ export async function refreshItemPrice(item: ItemRow, deadline = Number.POSITIVE
 		await db
 			.update(listItemsTable)
 			.set({ priceCheckStatus: "failed", priceCheckFailures: item.priceCheckFailures + 1 })
-			.where(eq(listItemsTable.id, item.id))
+			// Só se o carimbo ainda é o desta checagem: uma edição de link (que o zera) não herda a falha do link antigo.
+			.where(and(eq(listItemsTable.id, item.id), eq(listItemsTable.priceCheckedAt, now)))
 		return "failed"
 	}
 

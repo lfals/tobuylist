@@ -11,7 +11,7 @@ import type { ListItemRecord } from "@/types/list"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Loader2Icon } from "lucide-react"
 import { useTranslations } from "next-intl"
-import { useTransition } from "react"
+import { useRef, useTransition } from "react"
 import { useForm } from "react-hook-form"
 import { useItemFormSchema, type ItemFormValues } from "./formSchema"
 import { NewItemForm } from "./item-form"
@@ -53,19 +53,24 @@ function EditItemForm({
 	const tCommon = useTranslations("Common")
 	const formSchema = useItemFormSchema()
 	const [isSaving, startSaving] = useTransition()
+	// Valores de quando o formulário abriu: a prop `item` pode ser atualizada depois (um refresh recarrega a lista).
+	const initial = useRef(itemToFormValues(item)).current
 	const form = useForm<ItemFormValues>({
 		resolver: zodResolver(formSchema),
-		defaultValues: itemToFormValues(item),
+		defaultValues: initial,
 	})
 
 	function onSubmit(values: ItemFormValues) {
+		// Link, loja e preço só vão para o servidor se a pessoa os mudou (ou o autofill mudou). Se não, o valor que o
+		// formulário carregou ao abrir pode estar velho (um refresh de preço rodou nesse meio tempo) e não deve voltar.
+		const offerChanged = values.link !== initial.link || values.store !== initial.store || values.price !== initial.price.replace(/\D/g, "")
 		startSaving(async () => {
 			await editListItem(listId, {
 				...values,
 				id: item.id,
 				quantity: Number(values.quantity),
 				listId,
-			}, { keepOffer: item.links.length > 1 })
+			}, { keepOffer: item.links.length > 1 || !offerChanged })
 			onOpenChange(false)
 		})
 	}
