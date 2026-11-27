@@ -8,5 +8,6 @@ CREATE TABLE `itemLinks` (
 	FOREIGN KEY (`itemId`) REFERENCES `listItems`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
+CREATE UNIQUE INDEX `itemLinks_item_link_idx` ON `itemLinks` (`itemId`,`link`);--> statement-breakpoint
 INSERT INTO `itemLinks` (`itemId`, `link`, `store`, `price`)
 SELECT `id`, `link`, `store`, `price` FROM `listItems` WHERE `link` IS NOT NULL AND `link` != '';

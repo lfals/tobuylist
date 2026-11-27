@@ -65,7 +65,7 @@ function EditItemForm({
 				id: item.id,
 				quantity: Number(values.quantity),
 				listId,
-			})
+			}, { keepOffer: item.links.length > 1 })
 			onOpenChange(false)
 		})
 	}

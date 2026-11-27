@@ -35,7 +35,10 @@ export const PATCH = route<Context>(async (request, { params }) => {
 		...(data.isActive !== undefined ? { isActive: data.isActive } : {}),
 	}
 
-	const [updated] = await db.update(listItemsTable).set(values).where(eq(listItemsTable.id, itemId)).returning()
+	// Com várias lojas, um PATCH só de preço/link não tem nada a gravar (o Drizzle recusa UPDATE vazio).
+	const [updated] = Object.keys(values).length > 0
+		? await db.update(listItemsTable).set(values).where(eq(listItemsTable.id, itemId)).returning()
+		: await db.select().from(listItemsTable).where(eq(listItemsTable.id, itemId)).limit(1)
 	const item = await reconcileEdit(itemId, before, updated)
 
 	return json({ item })

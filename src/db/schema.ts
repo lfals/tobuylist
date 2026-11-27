@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { index, int, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, int, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from "zod";
 
@@ -49,7 +49,7 @@ export const itemLinksTable = sqliteTable("itemLinks", {
     price: int().notNull(),
 
     createdAt: int().notNull().default(sql`CURRENT_TIMESTAMP`),
-})
+}, (table) => [uniqueIndex("itemLinks_item_link_idx").on(table.itemId, table.link)])
 
 
 export const priceHistoryTable = sqliteTable("priceHistory", {

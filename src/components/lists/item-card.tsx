@@ -79,8 +79,9 @@ export function ItemCardBody({
 							src={item.imageUrl}
 							onError={() => onImageError?.(item)}
 							alt={item.name.slice(0, 10)}
-							width={80}
-							height={80}
+							width={104}
+							height={104}
+							className="size-full object-cover rounded-sm"
 						/>
 					) : (
 						<div className="bg-gray-200 size-full rounded-sm flex items-center justify-center">

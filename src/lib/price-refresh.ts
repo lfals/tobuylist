@@ -8,7 +8,7 @@ import {
 	priceToCents,
 	type PriceHistoryPayload,
 } from "@/lib/price-history"
-import { applyItemEdit, cheapestLink, syncItemFromLinks } from "@/services/item-links"
+import { applyItemEdit, syncItemFromLinks } from "@/services/item-links"
 import { and, asc, count, eq, isNull, lt, or } from "drizzle-orm"
 
 /**
@@ -81,18 +81,21 @@ export async function refreshItemPrice(item: ItemRow, deadline = Number.POSITIVE
 	const targets = links.length > 0 ? links : [{ id: 0, link: item.link, store: item.store, price: item.price }]
 
 	// Primeiro só busca (rede); nada é gravado até o fim, então um corte por tempo não deixa estado pela metade.
-	const scraped = new Map<number, number>()
+	// O preço buscado guarda a URL de onde veio: se a loja mudou de URL durante a busca, o valor é descartado.
+	const scraped = new Map<number, { link: string; price: number }>()
+	let truncated = false
 	for (const [index, target] of targets.entries()) {
-		if (Date.now() >= deadline) {
-			break
-		}
 		if (index > 0) {
 			await sleep(SAME_HOST_DELAY_MS)
+		}
+		if (Date.now() >= deadline) {
+			truncated = true
+			break
 		}
 		try {
 			const next = priceToCents((await fetchProductData(target.link)).price)
 			if (next != null && isPlausiblePrice(target.price, next)) {
-				scraped.set(target.id, next)
+				scraped.set(target.id, { link: target.link, price: next })
 			}
 		} catch {
 			// Link com falha: mantém o preço que já tinha.
@@ -100,6 +103,11 @@ export async function refreshItemPrice(item: ItemRow, deadline = Number.POSITIVE
 	}
 
 	if (scraped.size === 0) {
+		if (truncated) {
+			// Acabou o tempo antes de tentar: devolve o carimbo anterior, sem contar como falha nem dobrar o backoff.
+			await db.update(listItemsTable).set({ priceCheckedAt: item.priceCheckedAt }).where(eq(listItemsTable.id, item.id))
+			return "skipped"
+		}
 		await db
 			.update(listItemsTable)
 			.set({ priceCheckStatus: "failed", priceCheckFailures: item.priceCheckFailures + 1 })
@@ -107,35 +115,48 @@ export async function refreshItemPrice(item: ItemRow, deadline = Number.POSITIVE
 		return "failed"
 	}
 
-	// Os links podem ter mudado durante a busca (alguém removeu uma loja): aplica os preços só nos que ainda existem.
-	const current = links.length > 0
-		? await db.select().from(itemLinksTable).where(eq(itemLinksTable.itemId, item.id)).orderBy(asc(itemLinksTable.id))
-		: targets
-	const merged = current.map((row) => ({ ...row, price: scraped.get(row.id) ?? row.price }))
-	const changedLinks = current.filter((row) => (scraped.get(row.id) ?? row.price) !== row.price)
-	const best = cheapestLink(merged)
-	if (!best) {
-		return "skipped"
+	const okState = { priceCheckedAt: now, priceCheckStatus: "ok" as const, priceCheckFailures: 0 }
+	const markOk = () => db.update(listItemsTable).set(okState).where(eq(listItemsTable.id, item.id))
+
+	// Os links podem ter mudado durante a busca (loja removida, URL trocada, loja nova): relê e aplica só onde a URL confere.
+	const current = await db.select().from(itemLinksTable).where(eq(itemLinksTable.itemId, item.id)).orderBy(asc(itemLinksTable.id))
+
+	if (current.length > 0) {
+		const matching = current.filter((row) => scraped.get(row.id)?.link === row.link)
+		if (matching.length === 0) {
+			return "skipped"
+		}
+		const changed = matching.filter((row) => scraped.get(row.id)!.price !== row.price)
+		await db.batch([
+			markOk(),
+			...changed.map((row) => db.update(itemLinksTable).set({ price: scraped.get(row.id)!.price }).where(eq(itemLinksTable.id, row.id))),
+		])
+		// O cache do item (mais barato) é recalculado a partir da tabela, não do que foi lido antes da busca.
+		await syncItemFromLinks(item.id)
+		const [after] = await db.select().from(listItemsTable).where(eq(listItemsTable.id, item.id)).limit(1)
+		const priceMoved = after.price !== item.price
+		if (priceMoved) {
+			await db.insert(priceHistoryTable).values({ itemId: item.id, price: after.price, checkedAt: now, source: "scrape" })
+		}
+		// "updated" também quando só um preço secundário (ou qual loja é a mais barata) mudou: a tela precisa recarregar.
+		return priceMoved || changed.length > 0 || after.link !== item.link ? "updated" : "unchanged"
 	}
 
-	const okState = { priceCheckedAt: now, priceCheckStatus: "ok" as const, priceCheckFailures: 0 }
-	const itemUpdate = db
-		.update(listItemsTable)
-		.set({ ...okState, price: best.price, link: best.link, store: best.store ?? item.store })
-		.where(eq(listItemsTable.id, item.id))
-	const linkUpdates = changedLinks
-		.filter((row) => row.id > 0)
-		.map((row) => db.update(itemLinksTable).set({ price: scraped.get(row.id)! }).where(eq(itemLinksTable.id, row.id)))
-	const priceMoved = best.price !== item.price
-
+	// Item antigo, sem registros em `itemLinks`: o link e o preço estão só na própria linha.
+	const [fresh] = await db.select().from(listItemsTable).where(eq(listItemsTable.id, item.id)).limit(1)
+	const hit = scraped.get(0)
+	if (!fresh || !hit || fresh.link !== hit.link) {
+		return "skipped"
+	}
+	if (hit.price === fresh.price) {
+		await markOk()
+		return "unchanged"
+	}
 	await db.batch([
-		...(priceMoved ? [db.insert(priceHistoryTable).values({ itemId: item.id, price: best.price, checkedAt: now, source: "scrape" })] : []),
-		itemUpdate,
-		...linkUpdates,
-	] as [typeof itemUpdate, ...(typeof itemUpdate)[]])
-
-	// "updated" também quando só um preço secundário (ou qual loja é a mais barata) mudou: a tela precisa recarregar.
-	return priceMoved || changedLinks.length > 0 || best.link !== item.link ? "updated" : "unchanged"
+		db.insert(priceHistoryTable).values({ itemId: item.id, price: hit.price, checkedAt: now, source: "scrape" }),
+		db.update(listItemsTable).set({ ...okState, price: hit.price }).where(eq(listItemsTable.id, item.id)),
+	])
+	return "updated"
 }
 
 export type RefreshSummary = Record<RefreshOutcome, number>

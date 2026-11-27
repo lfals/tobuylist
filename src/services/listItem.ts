@@ -144,7 +144,7 @@ export const deleteListItem = async (item: { id: number; listId: string }) => {
 }
 
 
-export const editListItem = async (listId: string, data: z.infer<typeof listItemInsertSchema>) => {
+export const editListItem = async (listId: string, data: z.infer<typeof listItemInsertSchema>, options?: { keepOffer?: boolean }) => {
     const userId = await requireUserId()
     // O `listId` vem do cliente, então a lista real é sempre a do item gravado no banco.
     const lists = await assertCanEditItems([data.id!], userId)
@@ -155,9 +155,9 @@ export const editListItem = async (listId: string, data: z.infer<typeof listItem
     }
 
     const [current] = await db.select().from(listItemsTable).where(eq(listItemsTable.id, data.id!)).limit(1)
-    if (current && await hasMultipleLinks(current.id)) {
-        // Com várias lojas, link/loja/preço são geridos no modal de links; o formulário (que pode estar
-        // desatualizado) não sobrescreve nada disso.
+    if (current && (options?.keepOffer || await hasMultipleLinks(current.id))) {
+        // Com várias lojas (ou formulário aberto quando o item tinha várias), link/loja/preço são geridos no modal
+        // de links; o formulário, que pode estar desatualizado, não sobrescreve nada disso.
         data = { ...data, link: current.link, store: current.store, price: String(current.price) }
     }
     const price = Number(String(data.price).replace("R$ ", "").replace(",", "").replace(".", ""))
