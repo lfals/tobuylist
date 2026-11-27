@@ -5,6 +5,8 @@ export type ProductFromLink = {
 	store?: string
 	price?: string
 	imageUrl?: string
+	/** O site recusou a busca automática (desafio anti-robô, 403/429): não há como ler o preço daqui. */
+	blocked?: boolean
 }
 
 function getMeta(html: string, key: string) {

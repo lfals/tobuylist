@@ -169,8 +169,8 @@ function PriceHistoryBody({ item }: { item: ListItemRecord }) {
 
 			{points.length < 2 ? <p className="text-sm text-neutral-500">{t("empty")}</p> : null}
 			{!data.item.hasLink ? <p className="text-sm text-neutral-500">{t("noLink")}</p> : null}
-			{data.item.hasLink && data.item.priceCheckStatus === "failed" ? (
-				<p className="text-sm text-amber-600 dark:text-amber-400">{t("failed")}</p>
+			{data.item.hasLink && (data.item.priceCheckStatus === "failed" || data.item.priceCheckStatus === "blocked") ? (
+				<p className="text-sm text-amber-600 dark:text-amber-400">{data.item.priceCheckStatus === "blocked" ? t("blocked") : t("failed")}</p>
 			) : null}
 			{data.item.hasLink ? (
 				<p className="text-xs text-neutral-500">

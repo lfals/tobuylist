@@ -29,7 +29,7 @@ export type PriceHistoryPayload = {
 		price: number
 		originalPrice: number | null
 		priceCheckedAt: number | null
-		priceCheckStatus: "ok" | "failed" | null
+		priceCheckStatus: "ok" | "failed" | "blocked" | null
 		hasLink: boolean
 	}
 	points: PricePoint[]

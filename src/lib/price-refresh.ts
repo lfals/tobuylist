@@ -1,5 +1,5 @@
 import db from "@/db/drizzle"
-import { listItemsTable, listsTable, priceHistoryTable } from "@/db/schema"
+import { itemLinksTable, listItemsTable, listsTable, priceHistoryTable } from "@/db/schema"
 import { fetchProductData } from "@/lib/product-fetch"
 import {
 	CRON_TTL_MS,
@@ -8,6 +8,7 @@ import {
 	priceToCents,
 	type PriceHistoryPayload,
 } from "@/lib/price-history"
+import { applyItemEdit, syncItemFromLinks } from "@/services/item-links"
 import { and, asc, count, eq, isNull, lt, or } from "drizzle-orm"
 
 /**
@@ -64,7 +65,7 @@ async function claim(item: ItemRow, now: number) {
 	return rows.length > 0
 }
 
-export async function refreshItemPrice(item: ItemRow): Promise<RefreshOutcome> {
+export async function refreshItemPrice(item: ItemRow, deadline = Number.POSITIVE_INFINITY): Promise<RefreshOutcome> {
 	if (!item.link || !item.isActive) {
 		return "skipped"
 	}
@@ -75,32 +76,106 @@ export async function refreshItemPrice(item: ItemRow): Promise<RefreshOutcome> {
 
 	await ensureBaseline(item)
 
-	let next: number | null = null
-	try {
-		const product = await fetchProductData(item.link)
-		next = priceToCents(product.price)
-	} catch {
-		next = null
+	// Cada link cadastrado tem o próprio preço; itens antigos, sem registros, só têm o link da própria linha.
+	const links = await db.select().from(itemLinksTable).where(eq(itemLinksTable.itemId, item.id)).orderBy(asc(itemLinksTable.id))
+	const targets = links.length > 0 ? links : [{ id: 0, link: item.link, store: item.store, price: item.price }]
+
+	// Primeiro só busca (rede); nada é gravado até o fim, então um corte por tempo não deixa estado pela metade.
+	// O preço buscado guarda a URL de onde veio: se a loja mudou de URL durante a busca, o valor é descartado.
+	const scraped = new Map<number, { link: string; price: number }>()
+	let truncated = false
+	let attempted = 0
+	let blockedCount = 0
+	for (const [index, target] of targets.entries()) {
+		if (index > 0) {
+			await sleep(SAME_HOST_DELAY_MS)
+		}
+		if (Date.now() >= deadline) {
+			truncated = true
+			break
+		}
+		attempted++
+		try {
+			const product = await fetchProductData(target.link)
+			if (product.blocked) {
+				blockedCount++
+			}
+			const next = priceToCents(product.price)
+			if (next != null && isPlausiblePrice(target.price, next)) {
+				scraped.set(target.id, { link: target.link, price: next })
+			}
+		} catch {
+			// Link com falha: mantém o preço que já tinha.
+		}
 	}
 
-	if (next == null || !isPlausiblePrice(item.price, next)) {
+	if (scraped.size === 0) {
+		if (truncated && attempted === 0) {
+			// Acabou o tempo antes de tentar qualquer link: devolve o carimbo anterior (só se ninguém o mexeu nesse meio
+			// tempo, p.ex. uma edição de link que força nova checagem), sem contar como falha nem dobrar o backoff.
+			await db
+				.update(listItemsTable)
+				.set({ priceCheckedAt: item.priceCheckedAt })
+				.where(and(eq(listItemsTable.id, item.id), eq(listItemsTable.priceCheckedAt, now)))
+			return "skipped"
+		}
 		await db
 			.update(listItemsTable)
-			.set({ priceCheckStatus: "failed", priceCheckFailures: item.priceCheckFailures + 1 })
-			.where(eq(listItemsTable.id, item.id))
+			// "blocked": a loja recusa busca automática (ex.: Cloudflare). O backoff é o mesmo da falha, só a mensagem muda.
+			.set({ priceCheckStatus: blockedCount === attempted ? "blocked" : "failed", priceCheckFailures: item.priceCheckFailures + 1 })
+			// Só se o carimbo ainda é o desta checagem: uma edição de link (que o zera) não herda a falha do link antigo.
+			.where(and(eq(listItemsTable.id, item.id), eq(listItemsTable.priceCheckedAt, now)))
 		return "failed"
 	}
 
 	const okState = { priceCheckedAt: now, priceCheckStatus: "ok" as const, priceCheckFailures: 0 }
+	const markOk = () => db.update(listItemsTable).set(okState).where(eq(listItemsTable.id, item.id))
 
-	if (next === item.price) {
-		await db.update(listItemsTable).set(okState).where(eq(listItemsTable.id, item.id))
-		return "unchanged"
+	// Os links podem ter mudado durante a busca (loja removida, URL trocada, loja nova): relê e aplica só onde a URL confere.
+	const current = await db.select().from(itemLinksTable).where(eq(itemLinksTable.itemId, item.id)).orderBy(asc(itemLinksTable.id))
+
+	if (current.length > 0) {
+		const matching = current.filter((row) => scraped.get(row.id)?.link === row.link)
+		if (matching.length === 0) {
+			return "skipped"
+		}
+		const changed = matching.filter((row) => scraped.get(row.id)!.price !== row.price)
+		// A URL é conferida de novo na própria gravação: se foi trocada depois da leitura acima, o preço não entra.
+		const priceUpdates = changed.map((row) =>
+			db.update(itemLinksTable).set({ price: scraped.get(row.id)!.price }).where(and(eq(itemLinksTable.id, row.id), eq(itemLinksTable.link, row.link))),
+		)
+		if (priceUpdates.length > 0) {
+			await db.batch(priceUpdates as unknown as Parameters<typeof db.batch>[0])
+		}
+		// O cache do item (mais barato) é recalculado a partir da tabela, não do que foi lido antes da busca.
+		await syncItemFromLinks(item.id)
+		// Só depois do recálculo o item conta como checado: se algo acima falhar, a próxima abertura tenta de novo.
+		await markOk()
+		const [after] = await db.select().from(listItemsTable).where(eq(listItemsTable.id, item.id)).limit(1)
+		if (!after) {
+			return "skipped"
+		}
+		const priceMoved = after.price !== item.price
+		if (priceMoved) {
+			await db.insert(priceHistoryTable).values({ itemId: item.id, price: after.price, checkedAt: now, source: "scrape" })
+		}
+		// "updated" também quando só um preço secundário (ou qual loja é a mais barata) mudou: a tela precisa recarregar.
+		return priceMoved || changed.length > 0 || after.link !== item.link ? "updated" : "unchanged"
 	}
 
+	// Item antigo, sem registros em `itemLinks`: o link e o preço estão só na própria linha.
+	const [fresh] = await db.select().from(listItemsTable).where(eq(listItemsTable.id, item.id)).limit(1)
+	const hit = scraped.get(0)
+	if (!fresh || !hit || fresh.link !== hit.link) {
+		return "skipped"
+	}
+	if (hit.price === fresh.price) {
+		await markOk()
+		return "unchanged"
+	}
 	await db.batch([
-		db.insert(priceHistoryTable).values({ itemId: item.id, price: next, checkedAt: now, source: "scrape" }),
-		db.update(listItemsTable).set({ ...okState, price: next }).where(eq(listItemsTable.id, item.id)),
+		db.insert(priceHistoryTable).values({ itemId: item.id, price: hit.price, checkedAt: now, source: "scrape" }),
+		db.update(listItemsTable).set({ ...okState, price: hit.price }).where(and(eq(listItemsTable.id, item.id), eq(listItemsTable.link, hit.link))),
 	])
 	return "updated"
 }
@@ -148,7 +223,7 @@ export async function refreshItems(items: ItemRow[], options: { concurrency?: nu
 				if (index > 0) {
 					await sleep(SAME_HOST_DELAY_MS)
 				}
-				summary[await refreshItemPrice(item)]++
+				summary[await refreshItemPrice(item, deadline)]++
 			}
 		}
 	}
@@ -271,4 +346,39 @@ export async function getPriceHistory(itemId: number, userId: string | null): Pr
 		},
 		points,
 	}
+}
+
+
+/** Recalcula o item a partir dos links (mais barato) e, se o preço dele mudou, registra no histórico. */
+export async function syncLinksAndRecord(itemId: number) {
+	const [before] = await db.select({ price: listItemsTable.price }).from(listItemsTable).where(eq(listItemsTable.id, itemId)).limit(1)
+	await syncItemFromLinks(itemId)
+	const [after] = await db.select({ price: listItemsTable.price }).from(listItemsTable).where(eq(listItemsTable.id, itemId)).limit(1)
+	if (before && after && before.price !== after.price) {
+		await recordManualPrice(itemId, after.price)
+	}
+}
+
+/**
+ * O item foi editado (formulário ou API mobile). Reflete link/loja/preço no registro de `itemLinks` que
+ * representava o item, recalcula o mais barato e mantém o histórico e a checagem de preço coerentes.
+ */
+export async function reconcileEdit(
+	itemId: number,
+	before: { link: string | null; price: number },
+	after: { link: string | null; store: string | null; price: number },
+) {
+	await applyItemEdit(itemId, before, after)
+	const [synced] = await db.select().from(listItemsTable).where(eq(listItemsTable.id, itemId)).limit(1)
+
+	if (synced.price !== before.price) {
+		// Edição manual do preço: vira o novo preço de referência e entra no histórico.
+		await recordManualPrice(itemId, synced.price)
+		return { ...synced, originalPrice: synced.price }
+	}
+	if ((after.link ?? null) !== (before.link ?? null)) {
+		// Link novo: força uma checagem na próxima abertura da lista.
+		await db.update(listItemsTable).set({ priceCheckedAt: null, priceCheckStatus: null, priceCheckFailures: 0 }).where(eq(listItemsTable.id, itemId))
+	}
+	return synced
 }

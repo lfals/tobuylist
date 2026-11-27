@@ -3,6 +3,7 @@
 import db from "@/db/drizzle";
 import { listItemsTable, listsTable, sharedListsTable } from "@/db/schema";
 import { requireUserId } from "@/lib/current-user";
+import { copyItemsWithLinks } from "@/services/item-links";
 import { getListAccess, revalidateList } from "@/services/list-access";
 import { getListDetails, getSharedList } from "@/services/lists-queries";
 import { and, eq } from "drizzle-orm";
@@ -55,13 +56,7 @@ export async function duplicateList(listId: string) {
         shared: list.shared,
     })
 
-    const newListItems = list.items.map(item => {
-        const { id, ...rest } = item
-        return { ...rest, listId: newList.id }
-    })
-    if (newListItems.length > 0) {
-        await db.insert(listItemsTable).values(newListItems)
-    }
+    await copyItemsWithLinks(list.items, newList.id)
 
     revalidatePath(`/app`)
     redirect(`/app/${newList.id}`)
@@ -106,13 +101,7 @@ export async function duplicateSharedList(listId: string) {
         shared: list.shared,
     })
 
-    const newListItems = list.items.map(item => {
-        const { id, ...rest } = item
-        return { ...rest, listId: newList.id }
-    })
-    if (newListItems.length > 0) {
-        await db.insert(listItemsTable).values(newListItems)
-    }
+    await copyItemsWithLinks(list.items, newList.id)
 
     revalidatePath(`/app`)
     redirect(`/app/${newList.id}`)

@@ -19,6 +19,7 @@ export function NewItemForm({
 	className,
 	isOpen,
 	showImageUrl = true,
+	lockOffer = false,
 	children,
 }: {
 	form: UseFormReturn<ItemFormValues>
@@ -27,10 +28,12 @@ export function NewItemForm({
 	className?: string
 	isOpen: boolean
 	showImageUrl?: boolean
+	/** Item com várias lojas: link, loja e preço ficam no modal de links, não neste formulário. */
+	lockOffer?: boolean
 	children: NewItemFormChildren
 }) {
 	const t = useTranslations("ItemForm")
-	const { isFetching } = useAutofillFromLink(form, isOpen)
+	const { isFetching, blocked } = useAutofillFromLink(form, isOpen && !lockOffer)
 	const actions = typeof children === "function" ? children({ isFetching }) : children
 
 	return (
@@ -47,6 +50,9 @@ export function NewItemForm({
 				id={formId}
 				aria-busy={isFetching}
 			>
+				{lockOffer ? (
+					<p className="text-sm text-muted-foreground">{t("multiStoreNote")}</p>
+				) : (
 				<FormField
 					control={form.control}
 					name="link"
@@ -66,9 +72,11 @@ export function NewItemForm({
 								/>
 							</FormControl>
 							<FormMessage />
+							{blocked ? <p className="text-sm text-muted-foreground">{t("siteBlocked")}</p> : null}
 						</FormItem>
 					)}
 				/>
+				)}
 				<FormField
 					control={form.control}
 					name="name"
@@ -82,6 +90,7 @@ export function NewItemForm({
 						</FormItem>
 					)}
 				/>
+				{lockOffer ? null : (
 				<FormField
 					control={form.control}
 					name="store"
@@ -95,6 +104,7 @@ export function NewItemForm({
 						</FormItem>
 					)}
 				/>
+				)}
 				{showImageUrl ? (
 					<FormField
 						control={form.control}
@@ -111,6 +121,7 @@ export function NewItemForm({
 					/>
 				) : null}
 				<div className="flex gap-2">
+					{lockOffer ? null : (
 					<FormField
 						control={form.control}
 						name="price"
@@ -132,6 +143,7 @@ export function NewItemForm({
 							</FormItem>
 						)}
 					/>
+					)}
 					<FormField
 						control={form.control}
 						name="quantity"

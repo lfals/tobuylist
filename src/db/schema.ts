@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { index, int, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, int, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from "zod";
 
@@ -30,7 +30,7 @@ export const listItemsTable = sqliteTable("listItems", {
     imageUrl: text(),
 
     priceCheckedAt: int(),
-    priceCheckStatus: text({ enum: ["ok", "failed"] }),
+    priceCheckStatus: text({ enum: ["ok", "failed", "blocked"] }),
     priceCheckFailures: int().notNull().default(0),
 
     createdAt: int().notNull().default(sql`CURRENT_TIMESTAMP`),
@@ -38,6 +38,18 @@ export const listItemsTable = sqliteTable("listItems", {
     isActive: int().notNull().default(1),
     order: int().notNull().default(0),
 });
+
+/** Um link/preço de uma loja para o mesmo item. `listItems.price/link/store` guardam o mais barato. */
+export const itemLinksTable = sqliteTable("itemLinks", {
+    id: int().primaryKey({ autoIncrement: true }),
+    itemId: int().notNull().references(() => listItemsTable.id, { onDelete: 'cascade' }),
+
+    link: text().notNull(),
+    store: text(),
+    price: int().notNull(),
+
+    createdAt: int().notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [uniqueIndex("itemLinks_item_link_idx").on(table.itemId, table.link)])
 
 
 export const priceHistoryTable = sqliteTable("priceHistory", {

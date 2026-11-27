@@ -1,7 +1,10 @@
-import type { listItemsTable, listsTable } from "@/db/schema"
+import type { itemLinksTable, listItemsTable, listsTable } from "@/db/schema"
 
 export type ListRecord = typeof listsTable.$inferSelect
-export type ListItemRecord = typeof listItemsTable.$inferSelect
+export type ItemLinkRecord = typeof itemLinksTable.$inferSelect
+export type ListItemRecord = typeof listItemsTable.$inferSelect & {
+	links: ItemLinkRecord[]
+}
 
 export type ListDetails = ListRecord & {
 	items: ListItemRecord[]

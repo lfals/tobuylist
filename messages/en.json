@@ -238,6 +238,8 @@
     "deleteDescription": "This action cannot be undone. It will permanently delete the item from your list."
   },
   "ItemForm": {
+    "multiStoreNote": "This item has several stores. Link, store and price are managed under \"View links and prices\" when you click the card.",
+    "siteBlocked": "This store blocks automatic lookups. Fill in the name and price manually.",
     "link": "Link",
     "linkPlaceholder": "https://store.com/product",
     "item": "Item",
@@ -297,6 +299,7 @@
     "empty": "No changes so far. The price is checked when you open the list, at most once a day.",
     "noLink": "This item has no link, so the price only changes if you edit it.",
     "failed": "Couldn't check the price from this link. We'll try again later.",
+    "blocked": "This store blocks automatic price checks. Update the price manually whenever you like.",
     "newPrices": "New prices available",
     "refresh": "Refresh",
     "sourceInitial": "Added",
@@ -304,5 +307,21 @@
     "sourceScrape": "Checked at the store",
     "chartLabel": "Price history chart for {name}",
     "originalPrice": "Original price: {price}"
+  },
+  "ItemLinks": {
+    "description": "Current price at each store. The lowest one shows on the card.",
+    "addTitle": "Add another store",
+    "add": "Add",
+    "cheapest": "Lowest price",
+    "invalidLink": "Link must be a valid URL.",
+    "empty": "No links added.",
+    "stores": "{count} stores",
+    "viewLinks": "View links and prices",
+    "priceRequired": "Enter the price.",
+    "saveError": "Couldn't save. This link may already be added.",
+    "deleteError": "Couldn't remove the link.",
+    "fetchingPrice": "Looking up the price…",
+    "priceNotFound": "Couldn't find the price at this store. Enter it manually.",
+    "siteBlocked": "This store blocks automatic lookups. Enter the price manually."
   }
 }
