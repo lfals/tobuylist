@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "81fa6530-7ed1-4b03-a3c8-9be624ad8e43",
+  "id": "78a0b7e0-4db0-4e3d-af25-352d2c596859",
   "prevId": "f1b00bb2-611c-44ee-88c5-bf1f9a5a2be1",
   "tables": {
     "itemLinks": {
@@ -51,16 +51,7 @@
           "default": "CURRENT_TIMESTAMP"
         }
       },
-      "indexes": {
-        "itemLinks_item_link_idx": {
-          "name": "itemLinks_item_link_idx",
-          "columns": [
-            "itemId",
-            "link"
-          ],
-          "isUnique": true
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
         "itemLinks_itemId_listItems_id_fk": {
           "name": "itemLinks_itemId_listItems_id_fk",
