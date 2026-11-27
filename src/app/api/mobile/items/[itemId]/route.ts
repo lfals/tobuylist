@@ -39,7 +39,9 @@ export const PATCH = route<Context>(async (request, { params }) => {
 	const [updated] = Object.keys(values).length > 0
 		? await db.update(listItemsTable).set(values).where(eq(listItemsTable.id, itemId)).returning()
 		: await db.select().from(listItemsTable).where(eq(listItemsTable.id, itemId)).limit(1)
-	const item = await reconcileEdit(itemId, before, updated)
+	// Edição que não toca em link/loja/preço (ou item com várias lojas) não mexe nas ofertas.
+	const touchesOffer = data.link !== undefined || data.store !== undefined || data.price !== undefined
+	const item = touchesOffer ? await reconcileEdit(itemId, before, updated) : updated
 
 	return json({ item })
 })

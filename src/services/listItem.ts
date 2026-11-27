@@ -155,12 +155,16 @@ export const editListItem = async (listId: string, data: z.infer<typeof listItem
     }
 
     const [current] = await db.select().from(listItemsTable).where(eq(listItemsTable.id, data.id!)).limit(1)
+    const price = Number(String(data.price).replace("R$ ", "").replace(",", "").replace(".", ""))
+
     if (current && (options?.keepOffer || await hasMultipleLinks(current.id))) {
         // Com várias lojas (ou formulário aberto quando o item tinha várias), link/loja/preço são geridos no modal
-        // de links; o formulário, que pode estar desatualizado, não sobrescreve nada disso.
-        data = { ...data, link: current.link, store: current.store, price: String(current.price) }
+        // de links; o formulário, que pode estar desatualizado, nem os grava (não sobrescreve um refresh).
+        const { link: _link, store: _store, price: _price, ...rest } = serverManagedOmitted(data)
+        const [kept] = await db.update(listItemsTable).set({ ...rest, listId: realListId }).where(eq(listItemsTable.id, data.id!)).returning()
+        revalidateList(realListId)
+        return [kept]
     }
-    const price = Number(String(data.price).replace("R$ ", "").replace(",", "").replace(".", ""))
 
     const listItem = await db.update(listItemsTable).set({ ...serverManagedOmitted(data), listId: realListId, price }).where(eq(listItemsTable.id, data.id!)).returning()
     const synced = current ? await reconcileEdit(data.id!, current, listItem[0]) : listItem[0]
@@ -178,11 +182,14 @@ export const addItemLink = async (itemId: number, data: { link: string; price: n
     const price = z.number().int().min(1).parse(data.price)
 
     await ensureLinks(itemId)
-    const existing = await db.select({ link: itemLinksTable.link }).from(itemLinksTable).where(eq(itemLinksTable.itemId, itemId))
-    if (existing.some((row) => row.link === link)) {
+    const added = await db
+        .insert(itemLinksTable)
+        .values({ itemId, link, store: storeForLink(link), price })
+        .onConflictDoNothing()
+        .returning({ id: itemLinksTable.id })
+    if (added.length === 0) {
         throw new Error("Link já cadastrado")
     }
-    await db.insert(itemLinksTable).values({ itemId, link, store: storeForLink(link), price })
     await syncLinksAndRecord(itemId)
 
     revalidateList(lists.get(itemId)!)

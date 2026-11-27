@@ -33,7 +33,8 @@ export async function ensureLinks(itemId: number) {
 
 	const [item] = await db.select().from(listItemsTable).where(eq(listItemsTable.id, itemId)).limit(1)
 	if (item?.link) {
-		await db.insert(itemLinksTable).values({ itemId, link: item.link, store: item.store, price: item.price })
+		// Duas chamadas simultâneas (adições em abas diferentes) não podem brigar pelo mesmo registro inicial.
+		await db.insert(itemLinksTable).values({ itemId, link: item.link, store: item.store, price: item.price }).onConflictDoNothing()
 	}
 }
 
@@ -77,8 +78,15 @@ export async function applyItemEdit(
 		const primary = links.find((row) => row.link === previous?.link)
 		if (primary) {
 			await db.delete(itemLinksTable).where(eq(itemLinksTable.id, primary.id))
-			await syncItemFromLinks(itemId)
 		}
+		// Sempre recalcula: se sobrou outra loja, ela vira o link do item (o UPDATE do formulário o deixou vazio).
+		await syncItemFromLinks(itemId)
+		return
+	}
+
+	if (links.length > 1) {
+		// O item ganhou outras lojas enquanto o formulário estava aberto: link/loja/preço agora são do modal de links.
+		await syncItemFromLinks(itemId)
 		return
 	}
 
