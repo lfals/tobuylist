@@ -2,19 +2,23 @@
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { formatNumber } from "@/lib/format-number"
 import { historySignature, type PriceHistoryPayload } from "@/lib/price-history"
 import type { ListItemRecord } from "@/types/list"
-import { BellRingIcon, Loader2Icon } from "lucide-react"
+import { BellRingIcon } from "lucide-react"
 import { useLocale, useTranslations } from "next-intl"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { PriceChart } from "./price-chart"
 
 /** Enquanto a tela está aberta, confere de tempos em tempos se o refresh em segundo plano trouxe preço novo. */
-const POLL_MS = 10_000
+const POLL_MS = 15_000
+
+/** Última resposta por item: reabrir a tela mostra o que já se sabe na hora e revalida por baixo. */
+const historyCache = new Map<number, PriceHistoryPayload>()
 
 type Props = {
 	item: ListItemRecord | null
@@ -33,11 +37,12 @@ async function loadHistory(itemId: number, signal?: AbortSignal): Promise<PriceH
 function PriceHistoryBody({ item }: { item: ListItemRecord }) {
 	const t = useTranslations("PriceHistory")
 	const locale = useLocale()
-	const [data, setData] = useState<PriceHistoryPayload | null>(null)
+	const [data, setData] = useState<PriceHistoryPayload | null>(() => historyCache.get(item.id) ?? null)
 	const [pending, setPending] = useState<PriceHistoryPayload | null>(null)
 	const [failed, setFailed] = useState(false)
 
 	const show = useCallback((payload: PriceHistoryPayload) => {
+		historyCache.set(payload.item.id, payload)
 		setData(payload)
 		setPending(null)
 		setFailed(false)
@@ -60,8 +65,10 @@ function PriceHistoryBody({ item }: { item: ListItemRecord }) {
 	}, [item.id, show])
 
 	const shownSignature = data ? historySignature(data) : null
+	const hasLink = data?.item.hasLink ?? false
 	useEffect(() => {
-		if (!shownSignature) {
+		// Sem link não há refresh automático: só uma edição manual mudaria algo, e ela já recarrega a lista.
+		if (!shownSignature || !hasLink) {
 			return
 		}
 		const timer = setInterval(() => {
@@ -73,7 +80,7 @@ function PriceHistoryBody({ item }: { item: ListItemRecord }) {
 				.catch(() => {})
 		}, POLL_MS)
 		return () => clearInterval(timer)
-	}, [item.id, shownSignature])
+	}, [item.id, shownSignature, hasLink])
 
 	const formatters = useMemo(
 		() => ({
@@ -106,10 +113,15 @@ function PriceHistoryBody({ item }: { item: ListItemRecord }) {
 	}
 
 	if (!data) {
+		// Esqueleto com a mesma altura do conteúdo final, para a tela não pular quando o dado chegar.
 		return (
-			<div className="flex items-center gap-2 p-4 text-sm text-neutral-500">
-				<Loader2Icon size={16} className="animate-spin" />
-				{t("loading")}
+			<div className="flex min-w-0 flex-col gap-4 p-4 pt-0 sm:p-0" role="status" aria-label={t("loading")}>
+				<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+					{[0, 1, 2, 3].map((index) => (
+						<Skeleton key={index} className="h-10 w-full" />
+					))}
+				</div>
+				<Skeleton className="h-[220px] w-full" />
 			</div>
 		)
 	}

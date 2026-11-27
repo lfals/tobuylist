@@ -9,7 +9,10 @@ import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useRef, useState, useTransition } from "react"
 import { DeleteItemDialog, EditItemDialog } from "./item-dialogs"
 import { StaticItemRow } from "./item-card"
-import { PriceHistoryDialog } from "./price-history-dialog"
+
+// O gráfico (recharts) é pesado e só serve depois do clique: fica fora do bundle inicial da lista.
+const loadPriceHistoryDialog = () => import("./price-history-dialog").then((mod) => mod.PriceHistoryDialog)
+const PriceHistoryDialog = dynamic(loadPriceHistoryDialog)
 
 const ReorderableItemList = dynamic(() =>
 	import("./item-row").then((mod) => mod.ReorderableItemList),
@@ -68,6 +71,13 @@ export default function Items({
 			.catch(() => {})
 	}, [isLoaded, isSignedIn, listId, initialItems, router])
 
+	// Depois que a lista carregou, baixa o chunk do gráfico em ociosidade para o clique abrir sem espera.
+	useEffect(() => {
+		const idle = window.requestIdleCallback ?? ((callback: () => void) => window.setTimeout(callback, 1500))
+		const handle = idle(() => void loadPriceHistoryDialog())
+		return () => (window.cancelIdleCallback ?? window.clearTimeout)(handle as number)
+	}, [])
+
 	const handleHistory = useCallback((current: ListItemRecord) => {
 		setHistoryItem(current)
 		setHistoryOpen(true)
@@ -124,7 +134,7 @@ export default function Items({
 					))}
 				</div>
 			)}
-			<PriceHistoryDialog item={historyItem} open={historyOpen} onOpenChange={setHistoryOpen} />
+			{historyItem ? <PriceHistoryDialog item={historyItem} open={historyOpen} onOpenChange={setHistoryOpen} /> : null}
 			{canEdit ? (
 				<>
 					<EditItemDialog

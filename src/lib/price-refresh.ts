@@ -216,21 +216,14 @@ export async function recordInitialPrice(itemId: number, price: number) {
 
 /** Histórico de um item, se o usuário puder ver a lista (dono, ou lista compartilhada). `userId` nulo = visitante. */
 export async function getPriceHistory(itemId: number, userId: string | null): Promise<PriceHistoryPayload | null> {
-	const [row] = await db
-		.select({ item: listItemsTable, ownerId: listsTable.userId, shared: listsTable.shared })
-		.from(listItemsTable)
-		.innerJoin(listsTable, eq(listsTable.id, listItemsTable.listId))
-		.where(eq(listItemsTable.id, itemId))
-		.limit(1)
-
-	if (!row || !(row.shared || (userId && row.ownerId === userId))) {
-		return null
-	}
-
-	await ensureBaseline(row.item)
-
-	const [item, points] = await Promise.all([
-		db.select().from(listItemsTable).where(eq(listItemsTable.id, itemId)).limit(1),
+	// Uma única ida ao banco (o Turso é remoto): o item com a lista e os pontos vão no mesmo batch.
+	const [rows, found] = await db.batch([
+		db
+			.select({ item: listItemsTable, ownerId: listsTable.userId, shared: listsTable.shared })
+			.from(listItemsTable)
+			.innerJoin(listsTable, eq(listsTable.id, listItemsTable.listId))
+			.where(eq(listItemsTable.id, itemId))
+			.limit(1),
 		db
 			.select({
 				id: priceHistoryTable.id,
@@ -243,7 +236,29 @@ export async function getPriceHistory(itemId: number, userId: string | null): Pr
 			.orderBy(asc(priceHistoryTable.checkedAt), asc(priceHistoryTable.id)),
 	])
 
-	const current = item[0]
+	const row = rows[0]
+	if (!row || !(row.shared || (userId && row.ownerId === userId))) {
+		return null
+	}
+
+	let current = row.item
+	let points = found
+	if (current.originalPrice == null) {
+		// Só acontece uma vez por item antigo (ou duplicado).
+		await ensureBaseline(current)
+		current = { ...current, originalPrice: current.price }
+		points = await db
+			.select({
+				id: priceHistoryTable.id,
+				price: priceHistoryTable.price,
+				checkedAt: priceHistoryTable.checkedAt,
+				source: priceHistoryTable.source,
+			})
+			.from(priceHistoryTable)
+			.where(eq(priceHistoryTable.itemId, itemId))
+			.orderBy(asc(priceHistoryTable.checkedAt), asc(priceHistoryTable.id))
+	}
+
 	return {
 		item: {
 			id: current.id,
