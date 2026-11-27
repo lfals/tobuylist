@@ -7,11 +7,12 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { formatAddedDate } from "@/lib/format-date"
 import { formatViewNumber } from "@/lib/format-number"
 import { cn } from "@/lib/utils"
 import type { ListItemRecord } from "@/types/list"
 import { GripIcon, ImageOffIcon, LineChartIcon, MoreHorizontalIcon } from "lucide-react"
-import { useTranslations } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import Image from "next/image"
 import type { ReactNode } from "react"
 import { memo } from "react"
@@ -28,12 +29,18 @@ export type ItemCardProps = {
 	dragHandle?: ReactNode
 }
 
-export function itemCardClassName(item: ListItemRecord, showImage: boolean) {
+export function itemCardClassName(item: ListItemRecord, showImage: boolean, canEdit: boolean) {
+	// Colunas: [alça de arrastar] [imagem] conteúdo [menu]; alça e menu só existem quando dá para editar.
+	const columns = {
+		"edit-image": "grid-cols-[min-content_min-content_1fr_min-content]",
+		"edit-noimage": "grid-cols-[min-content_1fr_min-content]",
+		"view-image": "grid-cols-[min-content_1fr]",
+		"view-noimage": "grid-cols-[1fr]",
+	}[`${canEdit ? "edit" : "view"}-${showImage ? "image" : "noimage"}` as const]
+
 	return cn(
 		"cv-auto grid gap-4 bg-white dark:bg-neutral-900 p-4 rounded-md",
-		showImage
-			? "grid-cols-[min-content_min-content_1fr_min-content]"
-			: "grid-cols-[min-content_1fr_min-content]",
+		columns,
 		item.isActive ? "" : "opacity-50",
 	)
 }
@@ -53,6 +60,8 @@ export function ItemCardBody({
 	const tPrice = useTranslations("PriceHistory")
 	const hasChange = item.originalPrice != null && item.originalPrice !== item.price
 	const isCheaper = hasChange && item.price < (item.originalPrice ?? 0)
+	const locale = useLocale()
+	const addedAt = formatAddedDate(item.createdAt, locale)
 
 	return (
 		<>
@@ -108,6 +117,9 @@ export function ItemCardBody({
 					</span>
 					<span>(x{item.quantity})</span>
 				</h1>
+				{addedAt ? (
+					<p className="text-xs text-muted-foreground">{tCommon("addedOn", { date: addedAt })}</p>
+				) : null}
 			</div>
 			<div className="flex items-center gap-1">
 				<Button
@@ -142,7 +154,7 @@ export function ItemCardBody({
 
 function StaticItemRowComponent(props: ItemCardProps) {
 	return (
-		<div className={itemCardClassName(props.item, props.showImage ?? true)}>
+		<div className={itemCardClassName(props.item, props.showImage ?? true, props.canEdit)}>
 			<ItemCardBody {...props} />
 		</div>
 	)
