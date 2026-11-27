@@ -123,7 +123,7 @@ function PriceHistoryBody({ item }: { item: ListItemRecord }) {
 	const sourceLabel = { initial: t("sourceInitial"), manual: t("sourceManual"), scrape: t("sourceScrape") }
 
 	return (
-		<div className="flex flex-col gap-4 p-4 pt-0 sm:p-0">
+		<div className="flex min-w-0 flex-col gap-4 p-4 pt-0 sm:p-0">
 			{pending ? (
 				<Alert>
 					<BellRingIcon size={16} />
@@ -214,7 +214,7 @@ export function PriceHistoryDialog({ item, open, onOpenChange }: Props) {
 				<DrawerContent>
 					<DrawerHeader>
 						<DrawerTitle>{t("title")}</DrawerTitle>
-						{item ? <p className="truncate text-sm text-neutral-500">{item.name}</p> : null}
+						{item ? <p className="line-clamp-2 break-words text-sm text-neutral-500">{item.name}</p> : null}
 					</DrawerHeader>
 					{body}
 				</DrawerContent>
@@ -224,10 +224,10 @@ export function PriceHistoryDialog({ item, open, onOpenChange }: Props) {
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange} modal>
-			<DialogContent className="sm:max-w-[600px]">
+			<DialogContent className="overflow-hidden sm:max-w-[600px] [&>*]:min-w-0">
 				<DialogHeader>
 					<DialogTitle>{t("title")}</DialogTitle>
-					{item ? <p className="truncate text-sm text-neutral-500">{item.name}</p> : null}
+					{item ? <p className="line-clamp-2 break-words text-sm text-neutral-500">{item.name}</p> : null}
 				</DialogHeader>
 				{body}
 			</DialogContent>

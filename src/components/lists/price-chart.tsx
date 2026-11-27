@@ -30,6 +30,8 @@ export function PriceChart({ points, endAt, label, sourceLabels, priceLabel }: P
 		() => ({
 			axisDate: new Intl.DateTimeFormat(locale, { day: "2-digit", month: "short" }),
 			dateTime: new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }),
+			// Sem "R$" nos eixos: o rótulo com símbolo quebrava em duas linhas. O tooltip mostra o valor completo.
+			axisPrice: new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
 		}),
 		[locale],
 	)
@@ -50,8 +52,8 @@ export function PriceChart({ points, endAt, label, sourceLabels, priceLabel }: P
 	const config = { price: { label: priceLabel, color: "hsl(var(--chart-1))" } } satisfies ChartConfig
 
 	return (
-		<ChartContainer config={config} className="aspect-auto h-[220px] w-full" aria-label={label} role="img">
-			<AreaChart data={data} margin={{ left: 0, right: 12, top: 8 }}>
+		<ChartContainer config={config} className="aspect-auto h-[220px] w-full min-w-0" aria-label={label} role="img">
+			<AreaChart data={data} margin={{ left: 0, right: 12, top: 8, bottom: 4 }}>
 				<defs>
 					<linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
 						<stop offset="5%" stopColor="var(--color-price)" stopOpacity={0.8} />
@@ -72,12 +74,12 @@ export function PriceChart({ points, endAt, label, sourceLabels, priceLabel }: P
 				/>
 				<YAxis
 					domain={domain}
-					width={76}
+					width={72}
 					tickLine={false}
 					axisLine={false}
 					tickMargin={4}
 					tickCount={3}
-					tickFormatter={(value: number) => formatNumber(String(Math.round(value)))}
+					tickFormatter={(value: number) => formatters.axisPrice.format(value / 100)}
 				/>
 				<ChartTooltip
 					cursor={false}
