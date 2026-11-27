@@ -14,7 +14,7 @@ import type { ListItemRecord } from "@/types/list"
 import { GripIcon, ImageOffIcon, LineChartIcon, MoreHorizontalIcon } from "lucide-react"
 import { useLocale, useTranslations } from "next-intl"
 import Image from "next/image"
-import type { KeyboardEvent, ReactNode } from "react"
+import type { ReactNode } from "react"
 import { memo } from "react"
 
 export type ItemCardProps = {
@@ -31,12 +31,13 @@ export type ItemCardProps = {
 }
 
 export function itemCardClassName(item: ListItemRecord, showImage: boolean, canEdit: boolean) {
-	// Colunas: [alça de arrastar] [imagem] conteúdo [menu]; alça e menu só existem quando dá para editar.
+	// Colunas: [alça de arrastar] [imagem] conteúdo [ações]. A alça só existe para quem edita; as ações
+	// (histórico de preço, e o menu para quem edita) existem sempre. `minmax(0, 1fr)` deixa o texto encolher.
 	const columns = {
-		"edit-image": "grid-cols-[min-content_min-content_1fr_min-content]",
-		"edit-noimage": "grid-cols-[min-content_1fr_min-content]",
-		"view-image": "grid-cols-[min-content_1fr]",
-		"view-noimage": "grid-cols-[1fr]",
+		"edit-image": "grid-cols-[min-content_min-content_minmax(0,1fr)_min-content]",
+		"edit-noimage": "grid-cols-[min-content_minmax(0,1fr)_min-content]",
+		"view-image": "grid-cols-[min-content_minmax(0,1fr)_min-content]",
+		"view-noimage": "grid-cols-[minmax(0,1fr)_min-content]",
 	}[`${canEdit ? "edit" : "view"}-${showImage ? "image" : "noimage"}` as const]
 
 	return cn(
@@ -67,18 +68,12 @@ export function ItemCardBody({
 	const tLinks = useTranslations("ItemLinks")
 	const storeCount = item.links.length
 	const openLinks = () => onOpenLinks(item)
-	const openLinksOnKey = (event: KeyboardEvent<HTMLElement>) => {
-		if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) {
-			event.preventDefault()
-			openLinks()
-		}
-	}
 
 	return (
 		<>
 			{canEdit ? dragHandle : null}
 			{showImage ? (
-				<div className="h-full aspect-square rounded-sm flex items-center justify-center cursor-pointer" onClick={openLinks}>
+				<div className="size-20 sm:size-[104px] self-center rounded-sm flex items-center justify-center cursor-pointer" onClick={openLinks}>
 					{item.imageUrl ? (
 						<Image
 							src={item.imageUrl}
@@ -88,32 +83,30 @@ export function ItemCardBody({
 							height={80}
 						/>
 					) : (
-						<div className="bg-gray-200 h-full aspect-square rounded-sm flex items-center justify-center">
+						<div className="bg-gray-200 size-full rounded-sm flex items-center justify-center">
 							<ImageOffIcon />
 						</div>
 					)}
 				</div>
 			) : null}
-			<div
-				className="flex flex-col gap-2 select-none min-w-0 cursor-pointer"
-				role="button"
-				tabIndex={0}
-				aria-label={`${item.name} - ${tLinks("viewLinks")}`}
-				onClick={openLinks}
-				onKeyDown={openLinksOnKey}
-			>
+			{/* A área toda abre o modal com o mouse; para teclado e leitor de tela o nome é um botão de verdade. */}
+			<div className="flex flex-col gap-2 select-none min-w-0 cursor-pointer" onClick={openLinks}>
 				<div className="flex flex-col">
-					<h1 className="font-bold truncate">{item.name}</h1>
-					<a href={item.link ?? "#"} target="_blank" className="flex items-center gap-2" onClick={(event) => event.stopPropagation()}>
+					<h1 className="font-bold truncate">
+						<button type="button" title={tLinks("viewLinks")} className="block w-full truncate text-left" onClick={openLinks}>
+							{item.name}
+						</button>
+					</h1>
+					<a href={item.link ?? "#"} target="_blank" className="flex items-center gap-2 min-w-0" onClick={(event) => event.stopPropagation()}>
 						{item.link ? (
 							<Image
-								src={`https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${item.link}&size=24#refinements`}
+								src={`https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(item.link)}&size=24#refinements`}
 								alt={item.name}
 								width={16}
 								height={16}
 							/>
 						) : null}
-						<p>
+						<p className="truncate">
 							{item.store ?? <>&nbsp;</>}
 							{storeCount > 1 ? <span className="text-muted-foreground"> · {tLinks("stores", { count: storeCount })}</span> : null}
 						</p>

@@ -2,6 +2,7 @@ import db from "@/db/drizzle"
 import { listItemsTable } from "@/db/schema"
 import { itemInputSchema } from "@/lib/mobile-items"
 import { json, parseId, readJson, requireApiUserId, requireEditableItem, route } from "@/lib/mobile-api"
+import { hasMultipleLinks } from "@/services/item-links"
 import { reconcileEdit } from "@/lib/price-refresh"
 import { storeFromUrl } from "@/lib/storeFromUrl"
 import { eq } from "drizzle-orm"
@@ -18,7 +19,10 @@ export const PATCH = route<Context>(async (request, { params }) => {
 	const itemId = parseId((await params).itemId, "item")
 	const { item: before } = await requireEditableItem(itemId, userId)
 
-	const data = patchSchema.parse(await readJson(request))
+	const parsed = patchSchema.parse(await readJson(request))
+	// Com várias lojas, link/loja/preço só mudam pelo modal de links.
+	const multi = await hasMultipleLinks(itemId)
+	const data = multi ? { ...parsed, link: undefined, store: undefined, price: undefined } : parsed
 	const store = data.store || (data.link ? storeFromUrl(data.link) : undefined)
 
 	const values = {

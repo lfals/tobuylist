@@ -238,6 +238,7 @@
     "deleteDescription": "This action cannot be undone. It will permanently delete the item from your list."
   },
   "ItemForm": {
+    "multiStoreNote": "This item has several stores. Link, store and price are managed under \"View links and prices\" when you click the card.",
     "link": "Link",
     "linkPlaceholder": "https://store.com/product",
     "item": "Item",
@@ -313,6 +314,9 @@
     "invalidLink": "Link must be a valid URL.",
     "empty": "No links added.",
     "stores": "{count} stores",
-    "viewLinks": "View links and prices"
+    "viewLinks": "View links and prices",
+    "priceRequired": "Enter the price.",
+    "saveError": "Couldn't save. This link may already be added.",
+    "deleteError": "Couldn't remove the link."
   }
 }

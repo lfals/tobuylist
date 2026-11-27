@@ -80,6 +80,7 @@ function EditItemForm({
 			className={isMobile ? "space-y-4 p-4" : "space-y-4"}
 			isOpen={open}
 			showImageUrl={showImageUrl}
+			lockOffer={item.links.length > 1}
 		>
 			{({ isFetching }) =>
 				isMobile ? (

@@ -65,7 +65,7 @@ async function claim(item: ItemRow, now: number) {
 	return rows.length > 0
 }
 
-export async function refreshItemPrice(item: ItemRow): Promise<RefreshOutcome> {
+export async function refreshItemPrice(item: ItemRow, deadline = Number.POSITIVE_INFINITY): Promise<RefreshOutcome> {
 	if (!item.link || !item.isActive) {
 		return "skipped"
 	}
@@ -80,31 +80,26 @@ export async function refreshItemPrice(item: ItemRow): Promise<RefreshOutcome> {
 	const links = await db.select().from(itemLinksTable).where(eq(itemLinksTable.itemId, item.id)).orderBy(asc(itemLinksTable.id))
 	const targets = links.length > 0 ? links : [{ id: 0, link: item.link, store: item.store, price: item.price }]
 
-	let anyChecked = false
-	const current = targets.map((target) => ({ ...target }))
+	// Primeiro só busca (rede); nada é gravado até o fim, então um corte por tempo não deixa estado pela metade.
+	const scraped = new Map<number, number>()
 	for (const [index, target] of targets.entries()) {
+		if (Date.now() >= deadline) {
+			break
+		}
 		if (index > 0) {
 			await sleep(SAME_HOST_DELAY_MS)
 		}
-		let next: number | null = null
 		try {
-			next = priceToCents((await fetchProductData(target.link)).price)
-		} catch {
-			next = null
-		}
-		if (next == null || !isPlausiblePrice(target.price, next)) {
-			continue
-		}
-		anyChecked = true
-		if (next !== target.price) {
-			current[index].price = next
-			if (target.id > 0) {
-				await db.update(itemLinksTable).set({ price: next }).where(eq(itemLinksTable.id, target.id))
+			const next = priceToCents((await fetchProductData(target.link)).price)
+			if (next != null && isPlausiblePrice(target.price, next)) {
+				scraped.set(target.id, next)
 			}
+		} catch {
+			// Link com falha: mantém o preço que já tinha.
 		}
 	}
 
-	if (!anyChecked) {
+	if (scraped.size === 0) {
 		await db
 			.update(listItemsTable)
 			.set({ priceCheckStatus: "failed", priceCheckFailures: item.priceCheckFailures + 1 })
@@ -112,20 +107,35 @@ export async function refreshItemPrice(item: ItemRow): Promise<RefreshOutcome> {
 		return "failed"
 	}
 
-	const okState = { priceCheckedAt: now, priceCheckStatus: "ok" as const, priceCheckFailures: 0 }
-	// O preço do item é sempre o do link mais barato.
-	const best = cheapestLink(current)!
-
-	if (best.price === item.price) {
-		await db.update(listItemsTable).set({ ...okState, link: best.link, store: best.store ?? item.store }).where(eq(listItemsTable.id, item.id))
-		return "unchanged"
+	// Os links podem ter mudado durante a busca (alguém removeu uma loja): aplica os preços só nos que ainda existem.
+	const current = links.length > 0
+		? await db.select().from(itemLinksTable).where(eq(itemLinksTable.itemId, item.id)).orderBy(asc(itemLinksTable.id))
+		: targets
+	const merged = current.map((row) => ({ ...row, price: scraped.get(row.id) ?? row.price }))
+	const changedLinks = current.filter((row) => (scraped.get(row.id) ?? row.price) !== row.price)
+	const best = cheapestLink(merged)
+	if (!best) {
+		return "skipped"
 	}
 
+	const okState = { priceCheckedAt: now, priceCheckStatus: "ok" as const, priceCheckFailures: 0 }
+	const itemUpdate = db
+		.update(listItemsTable)
+		.set({ ...okState, price: best.price, link: best.link, store: best.store ?? item.store })
+		.where(eq(listItemsTable.id, item.id))
+	const linkUpdates = changedLinks
+		.filter((row) => row.id > 0)
+		.map((row) => db.update(itemLinksTable).set({ price: scraped.get(row.id)! }).where(eq(itemLinksTable.id, row.id)))
+	const priceMoved = best.price !== item.price
+
 	await db.batch([
-		db.insert(priceHistoryTable).values({ itemId: item.id, price: best.price, checkedAt: now, source: "scrape" }),
-		db.update(listItemsTable).set({ ...okState, price: best.price, link: best.link, store: best.store ?? item.store }).where(eq(listItemsTable.id, item.id)),
-	])
-	return "updated"
+		...(priceMoved ? [db.insert(priceHistoryTable).values({ itemId: item.id, price: best.price, checkedAt: now, source: "scrape" })] : []),
+		itemUpdate,
+		...linkUpdates,
+	] as [typeof itemUpdate, ...(typeof itemUpdate)[]])
+
+	// "updated" também quando só um preço secundário (ou qual loja é a mais barata) mudou: a tela precisa recarregar.
+	return priceMoved || changedLinks.length > 0 || best.link !== item.link ? "updated" : "unchanged"
 }
 
 export type RefreshSummary = Record<RefreshOutcome, number>
@@ -171,7 +181,7 @@ export async function refreshItems(items: ItemRow[], options: { concurrency?: nu
 				if (index > 0) {
 					await sleep(SAME_HOST_DELAY_MS)
 				}
-				summary[await refreshItemPrice(item)]++
+				summary[await refreshItemPrice(item, deadline)]++
 			}
 		}
 	}

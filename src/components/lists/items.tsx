@@ -44,9 +44,15 @@ export default function Items({
 	const router = useRouter()
 	const { isLoaded, isSignedIn } = useAuth()
 	const refreshStartedFor = useRef<string>(undefined)
+	// O id fica guardado mesmo com o modal fechando, para o conteúdo não sumir durante a animação de saída.
 	const [linksItemId, setLinksItemId] = useState<number | null>(null)
+	const [linksOpen, setLinksOpen] = useState(false)
 	// Busca o item atual da lista para o modal refletir links adicionados/removidos.
 	const linksItem = items.find((item) => item.id === linksItemId) ?? null
+	const handleOpenLinks = useCallback((current: ListItemRecord) => {
+		setLinksItemId(current.id)
+		setLinksOpen(true)
+	}, [])
 	const lastSavedOrder = useRef(orderSignature(initialItems))
 	const persistTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
 	const [, startMarking] = useTransition()
@@ -126,7 +132,7 @@ export default function Items({
 		onDelete: setDeletingItem,
 		onMark: handleMark,
 		onHistory: handleHistory,
-		onOpenLinks: (item: ListItemRecord) => setLinksItemId(item.id),
+		onOpenLinks: handleOpenLinks,
 		onImageError: showImage && canEdit ? handleImageError : undefined,
 	}
 
@@ -145,12 +151,8 @@ export default function Items({
 			<ItemLinksDialog
 				item={linksItem}
 				canEdit={canEdit}
-				open={linksItem !== null}
-				onOpenChange={(open) => {
-					if (!open) {
-						setLinksItemId(null)
-					}
-				}}
+				open={linksOpen && linksItem !== null}
+				onOpenChange={setLinksOpen}
 			/>
 			{canEdit ? (
 				<>

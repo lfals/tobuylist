@@ -238,6 +238,7 @@
     "deleteDescription": "Esta ação não pode ser desfeita. Isso excluirá permanentemente o item de sua lista."
   },
   "ItemForm": {
+    "multiStoreNote": "Este item tem várias lojas. Link, loja e preço são gerenciados em \"Ver links e preços\", ao clicar no card.",
     "link": "Link",
     "linkPlaceholder": "https://loja.com.br/produto",
     "item": "Item",
@@ -313,6 +314,9 @@
     "invalidLink": "Link deve ser uma URL válida.",
     "empty": "Nenhum link cadastrado.",
     "stores": "{count} lojas",
-    "viewLinks": "Ver links e preços"
+    "viewLinks": "Ver links e preços",
+    "priceRequired": "Informe o preço.",
+    "saveError": "Não foi possível salvar. Esse link já pode estar cadastrado.",
+    "deleteError": "Não foi possível remover o link."
   }
 }

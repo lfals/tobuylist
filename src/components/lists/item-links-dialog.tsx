@@ -45,15 +45,24 @@ function AddLinkForm({ itemId }: { itemId: number }) {
 	function submit(event: React.FormEvent) {
 		event.preventDefault()
 		const trimmed = link.trim()
+		const cents = Number(price.replace(/\D/g, ""))
 		if (!isValidUrl(trimmed)) {
 			setError(t("invalidLink"))
 			return
 		}
+		if (!(cents > 0)) {
+			setError(t("priceRequired"))
+			return
+		}
 		setError(null)
 		startSaving(async () => {
-			await addItemLink(itemId, { link: trimmed, price: Number(price.replace(/\D/g, "")) })
-			setLink("")
-			setPrice("R$ 0,00")
+			try {
+				await addItemLink(itemId, { link: trimmed, price: cents })
+				setLink("")
+				setPrice("R$ 0,00")
+			} catch {
+				setError(t("saveError"))
+			}
 		})
 	}
 
@@ -95,16 +104,18 @@ function LinkRow({ entry, isCheapest, canDelete, itemName }: {
 	const t = useTranslations("ItemLinks")
 	const tCommon = useTranslations("Common")
 	const [isDeleting, startDeleting] = useTransition()
+	const [error, setError] = useState(false)
 
 	return (
-		<li className={cn("flex items-center gap-3 rounded-md border p-3", isCheapest && "border-green-600/60")}>
+		<li className={cn("flex flex-col gap-1 rounded-md border p-3", isCheapest && "border-green-600/60")}>
+			<div className="flex items-center gap-3">
 			<Image src={faviconUrl(entry.link)} alt="" width={16} height={16} unoptimized className="shrink-0" />
 			<div className="flex min-w-0 flex-1 flex-col">
 				<a href={entry.link} target="_blank" rel="noreferrer" className="flex items-center gap-1 truncate text-sm hover:underline" title={entry.link}>
 					<span className="truncate">{entry.store || itemName}</span>
 					<ExternalLinkIcon size={12} className="shrink-0" />
 				</a>
-				{isCheapest ? <span className="text-xs text-green-600">{t("cheapest")}</span> : null}
+				{isCheapest ? <span className="text-xs text-green-700 dark:text-green-500">{t("cheapest")}</span> : null}
 			</div>
 			<span className="font-semibold whitespace-nowrap">{formatViewNumber(entry.price.toString())}</span>
 			{canDelete ? (
@@ -113,11 +124,20 @@ function LinkRow({ entry, isCheapest, canDelete, itemName }: {
 					variant="ghost"
 					aria-label={tCommon("delete")}
 					disabled={isDeleting}
-					onClick={() => startDeleting(async () => { await deleteItemLink(entry.id) })}
+					onClick={() => startDeleting(async () => {
+						try {
+							setError(false)
+							await deleteItemLink(entry.id)
+						} catch {
+							setError(true)
+						}
+					})}
 				>
 					{isDeleting ? <Loader2Icon size={16} className="animate-spin" /> : <Trash2Icon size={16} />}
 				</Button>
 			) : null}
+			</div>
+			{error ? <p className="text-sm text-destructive">{t("deleteError")}</p> : null}
 		</li>
 	)
 }
@@ -133,14 +153,14 @@ function LinksContent({ item, canEdit }: { item: ListItemRecord; canEdit: boolea
 	return (
 		<div className="flex flex-col gap-4">
 			{links.length === 0 ? <p className="text-sm text-muted-foreground">{t("empty")}</p> : (
-				<ul className="flex max-h-[50vh] flex-col gap-2 overflow-y-auto">
+				<ul className="flex max-h-[40vh] flex-col gap-2 overflow-y-auto">
 					{links.map((entry) => (
 						<LinkRow
 							key={`${entry.id}-${entry.link}`}
 							entry={entry}
 							itemName={item.name}
 							isCheapest={entry.id === cheapestId}
-							// Registros só existem a partir de 2 links; o último nunca pode ser removido.
+							// O último link nunca pode ser removido.
 							canDelete={canEdit && item.links.length > 1}
 						/>
 					))}
@@ -166,10 +186,10 @@ export function ItemLinksDialog({ item, canEdit, open, onOpenChange }: {
 			<Drawer open={open} onOpenChange={onOpenChange}>
 				<DrawerContent>
 					<DrawerHeader>
-						<DrawerTitle className="break-words leading-snug">{item?.name}</DrawerTitle>
+						<DrawerTitle className="[overflow-wrap:anywhere] leading-snug">{item?.name}</DrawerTitle>
 						<DrawerDescription>{t("description")}</DrawerDescription>
 					</DrawerHeader>
-					<div className="p-4 pt-0">{content}</div>
+					<div className="max-h-[70vh] overflow-y-auto p-4 pt-0">{content}</div>
 				</DrawerContent>
 			</Drawer>
 		)
@@ -179,7 +199,7 @@ export function ItemLinksDialog({ item, canEdit, open, onOpenChange }: {
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="grid-cols-[minmax(0,1fr)] sm:max-w-[480px]">
 				<DialogHeader>
-					<DialogTitle className="break-words pr-6 leading-snug">{item?.name}</DialogTitle>
+					<DialogTitle className="[overflow-wrap:anywhere] pr-6 leading-snug">{item?.name}</DialogTitle>
 					<DialogDescription>{t("description")}</DialogDescription>
 				</DialogHeader>
 				{content}

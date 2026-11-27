@@ -6,8 +6,8 @@ import { requireSignedIn, requireUserId } from "@/lib/current-user"
 import { reconcileEdit, recordInitialPrice, syncLinksAndRecord } from "@/lib/price-refresh"
 import { storeFromUrl } from "@/lib/storeFromUrl"
 import { assertCanEditItems, assertCanEditList, revalidateList } from "@/services/list-access"
-import { ensureLinks, seedFirstLink, storeForLink } from "@/services/item-links"
-import { eq } from "drizzle-orm"
+import { ensureLinks, hasMultipleLinks, seedFirstLink, storeForLink } from "@/services/item-links"
+import { and, eq, sql } from "drizzle-orm"
 import { z } from "zod"
 
 export type Root = {
@@ -155,6 +155,11 @@ export const editListItem = async (listId: string, data: z.infer<typeof listItem
     }
 
     const [current] = await db.select().from(listItemsTable).where(eq(listItemsTable.id, data.id!)).limit(1)
+    if (current && await hasMultipleLinks(current.id)) {
+        // Com várias lojas, link/loja/preço são geridos no modal de links; o formulário (que pode estar
+        // desatualizado) não sobrescreve nada disso.
+        data = { ...data, link: current.link, store: current.store, price: String(current.price) }
+    }
     const price = Number(String(data.price).replace("R$ ", "").replace(",", "").replace(".", ""))
 
     const listItem = await db.update(listItemsTable).set({ ...serverManagedOmitted(data), listId: realListId, price }).where(eq(listItemsTable.id, data.id!)).returning()
@@ -170,30 +175,17 @@ export const addItemLink = async (itemId: number, data: { link: string; price: n
     const lists = await assertCanEditItems([itemId], userId)
 
     const link = z.string().trim().url().parse(data.link)
-    const price = z.number().int().min(0).parse(data.price)
+    const price = z.number().int().min(1).parse(data.price)
 
     await ensureLinks(itemId)
+    const existing = await db.select({ link: itemLinksTable.link }).from(itemLinksTable).where(eq(itemLinksTable.itemId, itemId))
+    if (existing.some((row) => row.link === link)) {
+        throw new Error("Link já cadastrado")
+    }
     await db.insert(itemLinksTable).values({ itemId, link, store: storeForLink(link), price })
     await syncLinksAndRecord(itemId)
 
     revalidateList(lists.get(itemId)!)
-}
-
-export const editItemLink = async (linkId: number, data: { link: string; price: number }) => {
-    const userId = await requireUserId()
-    const [row] = await db.select().from(itemLinksTable).where(eq(itemLinksTable.id, linkId)).limit(1)
-    if (!row) {
-        throw new Error("Not found")
-    }
-    const lists = await assertCanEditItems([row.itemId], userId)
-
-    const link = z.string().trim().url().parse(data.link)
-    const price = z.number().int().min(0).parse(data.price)
-
-    await db.update(itemLinksTable).set({ link, store: link === row.link ? row.store : storeForLink(link), price }).where(eq(itemLinksTable.id, linkId))
-    await syncLinksAndRecord(row.itemId)
-
-    revalidateList(lists.get(row.itemId)!)
 }
 
 export const deleteItemLink = async (linkId: number) => {
@@ -204,12 +196,17 @@ export const deleteItemLink = async (linkId: number) => {
     }
     const lists = await assertCanEditItems([row.itemId], userId)
 
-    const siblings = await db.select({ id: itemLinksTable.id }).from(itemLinksTable).where(eq(itemLinksTable.itemId, row.itemId))
-    if (siblings.length <= 1) {
+    // Um único DELETE condicional: duas exclusões simultâneas não conseguem remover todos os links.
+    const deleted = await db
+        .delete(itemLinksTable)
+        .where(and(
+            eq(itemLinksTable.id, linkId),
+            sql`(select count(*) from ${itemLinksTable} where ${itemLinksTable.itemId} = ${row.itemId}) > 1`,
+        ))
+        .returning({ id: itemLinksTable.id })
+    if (deleted.length === 0) {
         throw new Error("Item precisa de ao menos um link")
     }
-
-    await db.delete(itemLinksTable).where(eq(itemLinksTable.id, linkId))
     await syncLinksAndRecord(row.itemId)
 
     revalidateList(lists.get(row.itemId)!)

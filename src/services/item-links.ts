@@ -82,6 +82,10 @@ export async function applyItemEdit(
 	const links = await db.select().from(itemLinksTable).where(eq(itemLinksTable.itemId, itemId))
 
 	if (!next.link) {
+		// Link apagado: o item fica sem link, então os registros também saem (senão voltariam depois).
+		if (links.length > 0) {
+			await db.delete(itemLinksTable).where(eq(itemLinksTable.itemId, itemId))
+		}
 		return
 	}
 
@@ -97,4 +101,20 @@ export async function applyItemEdit(
 
 export function storeForLink(link: string, store?: string | null) {
 	return store?.trim() || storeFromUrl(link) || null
+}
+
+/** Com mais de um link, link/loja/preço do item só mudam pelo modal de links (o formulário não os edita). */
+export async function hasMultipleLinks(itemId: number) {
+	const rows = await db.select({ id: itemLinksTable.id }).from(itemLinksTable).where(eq(itemLinksTable.itemId, itemId)).limit(2)
+	return rows.length > 1
+}
+
+/** Copia os itens (e os links de cada um) para a lista nova. Um insert por item: não depende da ordem do RETURNING. */
+export async function copyItemsWithLinks(items: (typeof listItemsTable.$inferSelect & { links: ItemLinkRecord[] })[], listId: string) {
+	for (const { id: _id, links, ...rest } of items) {
+		const [created] = await db.insert(listItemsTable).values({ ...rest, listId }).returning({ id: listItemsTable.id })
+		if (links.length > 0) {
+			await db.insert(itemLinksTable).values(links.map(({ id: _linkId, itemId: _itemId, ...link }) => ({ ...link, itemId: created.id })))
+		}
+	}
 }
