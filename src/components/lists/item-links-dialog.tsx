@@ -166,7 +166,7 @@ export function ItemLinksDialog({ item, canEdit, open, onOpenChange }: {
 			<Drawer open={open} onOpenChange={onOpenChange}>
 				<DrawerContent>
 					<DrawerHeader>
-						<DrawerTitle className="truncate">{item?.name}</DrawerTitle>
+						<DrawerTitle className="break-words leading-snug">{item?.name}</DrawerTitle>
 						<DrawerDescription>{t("description")}</DrawerDescription>
 					</DrawerHeader>
 					<div className="p-4 pt-0">{content}</div>
@@ -177,9 +177,9 @@ export function ItemLinksDialog({ item, canEdit, open, onOpenChange }: {
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[480px]">
+			<DialogContent className="grid-cols-[minmax(0,1fr)] sm:max-w-[480px]">
 				<DialogHeader>
-					<DialogTitle className="truncate pr-6">{item?.name}</DialogTitle>
+					<DialogTitle className="break-words pr-6 leading-snug">{item?.name}</DialogTitle>
 					<DialogDescription>{t("description")}</DialogDescription>
 				</DialogHeader>
 				{content}
